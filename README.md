@@ -1,10 +1,13 @@
 # ESPWebConfig
-Arduino configuration library for ESP8266 chip. Configure everything in a web interface.
+Arduino web based configuration library for ESP8266 chip.
 
-Configure device after boot in a web interface. Unconfigured device
-act as access point. Define parameters in your code, and they will show up in
-web config. (typically SSID and Wifi)
+Configure the device in a web inteface. After first boot it will act as an access point,
+so you don't need ssid and password hardcoded in your program.
+Define parameters names in your code, and they will show up in
+web config, for example SSID and Wifi password.
 
-After config and reboot, read parameter values and use them in your program.
+After config and reboot, you can read parameter values and use them in your program.
 
 TODO: Implement reset button.
+TODO: Second examle with more functionality.
+TODO: Prettier.
