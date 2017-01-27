@@ -20,7 +20,6 @@ char* mess;
 // TODO: can server and begin moove into ESPConfig
 ESP8266WebServer server(80);
 String parameters[] = {SSID_KEY, PWD_KEY, MESS_KEY};
-
 ESPConfig espConfig("configpass", -1, parameters, 3);
 
 void configReset() {
@@ -68,15 +67,15 @@ void setup() {
     Serial.println(unk?unk:"NULL");
 
     WiFi.mode(WIFI_STA);
-  	WiFi.begin (ssid, pwd);
+    WiFi.begin (ssid, pwd);
 
     if(WiFi.waitForConnectResult() != WL_CONNECTED) {
       Serial.println("WiFi Connect Failed! ...");
     }
     Serial.println(WiFi.localIP());
 
-  	server.on ("/configreset", HTTP_POST, configReset);
-  	server.on ("/", handleRoot);
+    server.on ("/configreset", HTTP_POST, configReset);
+    server.on ("/", handleRoot);
   } else {
     Serial.println("config mode");
  }
@@ -85,5 +84,5 @@ void setup() {
 }
 
 void loop() {
-	server.handleClient();
+  server.handleClient();
 }
