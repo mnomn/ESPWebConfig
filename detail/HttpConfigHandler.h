@@ -5,49 +5,64 @@
 #include <EEPROM.h>
 
 // EEprom defines
-#define CONFIG_VALID 0x1b
+#define CONFIG_VALID 0x11
 #define STRING_END 0
+#define SSID_ID 1
+#define PASS_ID 2
+#define NO_OF_INTERNAL_PARAMS 2
+#define USER_PARAM_ID 3
+
 /*
 Eeprom format: CONFIG_VALID, id1, chars, 0, id2, 0, ... 
 CONFIG_VALID,1,'v','a','l','1',0,2,'v','a','l','2',0
+id 1 and 2 is for wifi config. id 3 and higher is for user defined parameters.
 */
 class HttpConfigHandler : public RequestHandler {
   public:
-    HttpConfigHandler(const char* uri = "config", String* ParamNames = {},
+    HttpConfigHandler(const char* uri = "config", const String* ParamNames = {},
     int NoOfParameters = 0)
     : _uri(uri)
     {
       paramNames = ParamNames;
+#if DEBUG_PRINT
       for (int i = 0; i<NoOfParameters; i++) {
         Serial.print("Param ");
         Serial.println(paramNames[i]);
       }
+#endif
       noOfParams = NoOfParameters;
       Serial.println(uri);
     }
 
     bool canHandle(HTTPMethod method, String uri) {
-      Serial.print(uri);
-      Serial.print(method);
-      Serial.println(" Can handle true!");
       return true;
     }
 
     bool handle(ESP8266WebServer& server, HTTPMethod requestMethod, String requestUri) override { 
-      Serial.println("Handerling");
       if (requestUri != _uri) {
         return false;
       }
       if (requestMethod == HTTP_GET) {
-        String out = "<body><h1>Configure device</h1><form action='/' method='post'>";
-        for (int i = 0; i<noOfParams; i++) {
-          out += "<div><label for=pwd>";
-          out += paramNames[i];
-          out += ": </label><input type=text name='";
-          out += i;
-          out += "' /></div>";
+        String out =
+        "<!DOCTYPE html><html><head><style type=text/css>"
+        "body { margin:5% } form p label {display:block;float:left;width:100px;}"
+        "</style></head>"
+        "<body><h1>Configure me!</h1><form action='/' method='post'>"
+        "<h3>Wifi configuration</h3>"
+        "<p><label>SSID </label><input name=1 type=text/></p>"
+        "<p><label>Password </label><input name=2 type=text/></p>";
+
+        if (noOfParams) {
+          out += "<h3>Parameters</h3>";
         }
-        out += "<div><input type=submit /></div></form></body>";
+        for (int i = 0; i<noOfParams; i++) {
+          out += "<p><label>";
+          out += paramNames[i];
+          out +=  " </label><input type=text name=";
+          out += i + USER_PARAM_ID;
+          out += " /></p>";
+        }
+        out += "<p><input type=submit /></p></form></body></html>";
         server.send(200, "text/html", out);
       } else if (requestMethod == HTTP_POST) {
         char argName[8];
@@ -55,13 +70,18 @@ class HttpConfigHandler : public RequestHandler {
         const char* c;
         EEPROM.write(address, CONFIG_VALID);
         address++;
-       	for ( uint8_t i = 0; i < noOfParams; i++ ) {
+        for (int i = 1; i <= (noOfParams + NO_OF_INTERNAL_PARAMS); i++) {
           if (!itoa(i, argName, 10)) {
               break;
           }
           String val = server.arg(argName);
           c = val.c_str();
-          EEPROM.write(address, (i+1));
+#if DEBUG_PRINT
+          Serial.print(" ARG ");
+          Serial.print(i);
+          Serial.println(c);
+#endif
+          EEPROM.write(address, i);
           address++;
 
           while(*c) {
@@ -83,7 +103,7 @@ class HttpConfigHandler : public RequestHandler {
 
   protected:
     String _uri;
-    String* paramNames;
+    const String* paramNames;
     int noOfParams;
 };
 

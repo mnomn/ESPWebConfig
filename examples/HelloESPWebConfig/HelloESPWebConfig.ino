@@ -2,37 +2,39 @@
 #include <ESPWebConfig.h>
 
 /*
- Starter procect for ESP8266, ESPWebConfig demo.
- First boot or after longpress: enter access point mode to allow config,
+ Starter project for Arduino/ESP8266, ESPWebConfig demo.
+
+ First boot (or after longpress): Device will be an access point named
+ ESP_<ipnumber>, which you access to configure normal WIFI and other parameters.
+ User opens <ipnumber> in browser. Enter Wifi name and password. Also configure
+  user defined parameters, in this example "Greeting" and "Name".
 
  After config and restart:
- Log in to wifi from defined in config.
- Serve / and show param set in config
+ Lib will handle wifi login. The device will get new IP. In this example,
+ the custom parameters will be printed when browsing to new ip number.
+
+ You arduino sketch must define its own url handlers.
 
  (Long press reset not implemented)
 */
 
-const char* SSID_KEY = "SSID";
-const char* PWD_KEY = "Password";
-const char* MESS_KEY = "Hello message";
-char* mess;
+// Strings are both used to display UI and find value after config is done.
+const char* GREETING_KEY = "Greeting";
+const char* NAME_KEY = "Name";
+// Convenient pointers to parameter values, so they only need to be read once.
+char* greeting;
+char* name;
 
 // TODO: can server and begin moove into ESPConfig
 ESP8266WebServer server(80);
-String parameters[] = {SSID_KEY, PWD_KEY, MESS_KEY};
-ESPConfig espConfig("configpass", -1, parameters, 3);
-
-void configReset() {
-  // TODO: Some key/pwd to reset?
-  // Probably a bad idea to reset with API. Better to use hardware button.
-  // Only handles POST to make accidental reset less likely.
-  Serial.print("Clear config");
-  espConfig.clearConfig();
-  ESP.reset();
-}
+String parameters[] = {GREETING_KEY, NAME_KEY};
+int resetPin = -1; // No reset pin configured (not implemented in lib)
+ESPWebConfig espConfig("configpass", resetPin, parameters, 2);
 
 void handleRoot() {
-  String out = "<html><body><h1>Hello " + String(mess) + "</h1></body></html>";
+  String out = "<html><body><h1>HelloESPWebConfig</h1>";
+  out = "<h3>" + String(greeting) + ", nice to meet you " + String(name) +
+    ".</h3></body></html>";
   server.send(200, "text/html", out);
 }
 
@@ -41,48 +43,61 @@ void setup() {
   while(!Serial) {
     delay(1);
   }
-  Serial.println();
-  Serial.print("Starting ...");
+  Serial.println("Starting ...");
 
   if (espConfig.setup(server)) {
-    char* ssid;
-    char* pwd;
-
-    Serial.println();
     Serial.println("Normal boot");
 
-    ssid = espConfig.getParameter(SSID_KEY);
-    pwd = espConfig.getParameter(PWD_KEY);
-    mess = espConfig.getParameter(MESS_KEY);
-    Serial.print("SSID: ");
-    Serial.println(ssid);
-    Serial.print("PWD: ");
-    Serial.println(pwd);
-    Serial.print("Mess: ");
-    Serial.println(mess);
+    // Get config parameters and print them
+    greeting = espConfig.getParameter(GREETING_KEY);
+    name = espConfig.getParameter(NAME_KEY);
+    Serial.print("Greeting: ");
+    Serial.println(greeting?greeting:"NULL");
+    Serial.print("Name: ");
+    Serial.println(name?name:"NULL");
 
-    /* Try to get unknown parameter, for testing purpose.*/
+    // Try to get unknown parameter, for testing purpose.
     char* unk = espConfig.getParameter("unk");
     Serial.print("UNK: ");
     Serial.println(unk?unk:"NULL");
 
-    WiFi.mode(WIFI_STA);
-    WiFi.begin (ssid, pwd);
-
-    if(WiFi.waitForConnectResult() != WL_CONNECTED) {
-      Serial.println("WiFi Connect Failed! ...");
-    }
+    // Print IP
     Serial.println(WiFi.localIP());
 
-    server.on ("/configreset", HTTP_POST, configReset);
+    // Configure
+    server.on ("/configreset", HTTP_POST, handleConfigReset);
+    server.on ("/restart", HTTP_POST, handleRestart);
     server.on ("/", handleRoot);
   } else {
-    Serial.println("config mode");
- }
+    Serial.println("Config mode");
+  }
 
   server.begin();
 }
 
 void loop() {
+  espConfig.checkReset();
   server.handleClient();
+}
+
+/*
+ Nifty debug handlers
+ Use  curl -X POST http://192.168.1.45/configreset
+ Use  curl -X POST http://192.168.1.45/restart
+*/
+void handleConfigReset() {
+  // For development and debug.
+  // Probably a bad idea to reset with URL post. Better to use hardware button.
+  // Only handles POST to make accidental reset less likely.
+  server.send(200, "text/text", "Config reset!\n");
+  Serial.println("Clear config");
+  espConfig.clearConfig();
+  ESP.restart();
+}
+
+void handleRestart() {
+  server.send(200, "text/text", "Restart...\n");
+  Serial.println("Clear config");
+  ESP.restart();
+
 }

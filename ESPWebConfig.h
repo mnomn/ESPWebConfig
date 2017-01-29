@@ -26,19 +26,19 @@ ESPConfig espConfig("configpass", -1, parameters, noOfParams);
 #include <Arduino.h>
 #include <ESP8266WebServer.h>
 
-class ESPConfig
+class ESPWebConfig
 {
 public:
     /* Create ESPConfig object.
-       ConfigPassword: Password to login to the config AP.
+       configPassword: Password to login to the config AP.
                        Null for no password.
-       ResetPin:       Pin to use to reset config.
+       resetPin:       Pin to use to reset config.
                        Longpress to reset and reboot into config mode.
-       ParamNames: List of parameters to connfigure in in the web interface.
-       NoOfParameters: Number of parameters in ParamNames list
+       paramNames: List of parameters to connfigure in in the web interface.
+       noOfParameters: Number of parameters in ParamNames list
        */
-    ESPConfig(char* ConfigPassword, int ResetPin,
-              String* ParamNames, int NoOfParameters);
+    ESPWebConfig(const char* configPassword, int resetPin,
+                 String* paramNames, int noOfParameters);
     /* Call fron arduino setup function.
        Will read config. If not configured start web config.
        Return true if system is configured.
@@ -47,17 +47,27 @@ public:
     /* Call this to clear the config. Will nor restart device.
        Call ESP.restart() from main program to restart. */
     void clearConfig();
-    /* After config, call this to read parameter values. All values are char*
-       null if not found. The fumnction is quite slow, so only call it once.
+    /* After config, call this to read parameter values.
+       name: Use same string as in constructir.
+       return: parameter value as char*, or null if not found.
        */
     char* getParameter(const char *name);
 
+    /* Call in arduino loop function.
+       Device will clear config and restart if reset pin long pressed.
+       */
+    void checkReset();
+
 private:
     byte _eepromData[512];
-    int _noOfParameters = 0;
-    String* _paramNames;
-    char* _configPassword;
+    int _noOfParameters;
+    const String* _paramNames;
+    const char* _configPassword;
+    int _resetPin;
+    unsigned long _resetTime = 0;
 
+    // Private because users do not know mumerical id
+    char* _getParameterById(const int id);
     void _setupConfig(ESP8266WebServer& server);
     byte _nameToId(const char* name);
     bool _readConfig();
