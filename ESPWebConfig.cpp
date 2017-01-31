@@ -1,13 +1,12 @@
 #include <ESPWebConfig.h>
-#include <EEPROM.h>
 #include <ESP8266WiFi.h>
 #include <detail/HttpConfigHandler.h>
 
 #define LONGPRESS_MS 5000
 
 #define DEBUG_PRINT 0
-ESPWebConfig::ESPWebConfig(const char* configPassword, int resetPin,
-                     String* paramNames, int noOfParameters) {
+ESPWebConfig::ESPWebConfig(int resetPin, const char* configPassword,
+                           String* paramNames, int noOfParameters) {
   _configPassword = configPassword;
   _paramNames = paramNames;
   _noOfParameters = noOfParameters;
@@ -18,8 +17,6 @@ ESPWebConfig::ESPWebConfig(const char* configPassword, int resetPin,
 }
 
 bool ESPWebConfig::setup(ESP8266WebServer& server) {
-  Serial.println(_paramNames[1].c_str());
-
   if (this->_readConfig()) {
     WiFi.mode(WIFI_STA);
     char* ssid = this->_getParameterById(SSID_ID);
@@ -120,7 +117,7 @@ void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
 
 /* Find id of variablename. 1, 2, ..., return 0 on failure. */
 byte ESPWebConfig::_nameToId(const char* name) {
-  if (!name) {
+  if (!name || !_paramNames) {
     return 0;
   }
   int i = 0;
@@ -162,7 +159,7 @@ bool ESPWebConfig::_readConfig()
 }
 
 char* ESPWebConfig::_getParameterById(const int id) {
-  if (!id) {
+  if (id <= 0) {
     return 0;
   }
   byte* tmp = _eepromData;

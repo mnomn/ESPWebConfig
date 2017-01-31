@@ -5,7 +5,7 @@
 #include <EEPROM.h>
 
 // EEprom defines
-#define CONFIG_VALID 0x11
+#define CONFIG_VALID 0x1a
 #define STRING_END 0
 #define SSID_ID 1
 #define PASS_ID 2
@@ -54,13 +54,13 @@ class HttpConfigHandler : public RequestHandler {
 
         if (noOfParams) {
           out += "<h3>Parameters</h3>";
-        }
-        for (int i = 0; i<noOfParams; i++) {
-          out += "<p><label>";
-          out += paramNames[i];
-          out +=  " </label><input type=text name=";
-          out += i + USER_PARAM_ID;
-          out += " /></p>";
+          for (int i = 0; i<noOfParams; i++) {
+            out += "<p><label>";
+            out += paramNames[i];
+            out +=  " </label><input type=text name=";
+            out += i + USER_PARAM_ID;
+            out += " /></p>";
+          }
         }
         out += "<p><input type=submit /></p></form></body></html>";
         server.send(200, "text/html", out);

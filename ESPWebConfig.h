@@ -37,8 +37,8 @@ public:
        paramNames: List of parameters to connfigure in in the web interface.
        noOfParameters: Number of parameters in ParamNames list
        */
-    ESPWebConfig(const char* configPassword, int resetPin,
-                 String* paramNames, int noOfParameters);
+    ESPWebConfig( int resetPin, const char* configPassword = NULL,
+                 String* paramNames = {}, int noOfParameters = 0);
     /* Call fron arduino setup function.
        Will read config. If not configured start web config.
        Return true if system is configured.

@@ -29,7 +29,7 @@ char* name;
 ESP8266WebServer server(80);
 String parameters[] = {GREETING_KEY, NAME_KEY};
 int resetPin = -1; // No reset pin configured (not implemented in lib)
-ESPWebConfig espConfig("configpass", resetPin, parameters, 2);
+ESPWebConfig espConfig(resetPin, "configpass", parameters, 2);
 
 void handleRoot() {
   String out = "<html><body><h1>HelloESPWebConfig</h1>";
