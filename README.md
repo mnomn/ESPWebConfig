@@ -9,5 +9,4 @@ web config, for example SSID and Wifi password.
 After config and reboot, you can read parameter values and use them in your program.
 
 TODO: Implement reset button.
-TODO: Second examle with more functionality.
 TODO: Prettier.

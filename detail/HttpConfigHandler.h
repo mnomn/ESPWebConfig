@@ -49,20 +49,20 @@ class HttpConfigHandler : public RequestHandler {
         "</style></head>"
         "<body><h1>Configure me!</h1><form action='/' method='post'>"
         "<h3>Wifi configuration</h3>"
-        "<p><label>SSID </label><input name=1 type=text/></p>"
-        "<p><label>Password </label><input name=2 type=text/></p>";
+        "<p><label>SSID </label><input name=1 type='text'/></p>"
+        "<p><label>Password </label><input name=2 type='password'/></p>";
 
         if (noOfParams) {
           out += "<h3>Parameters</h3>";
           for (int i = 0; i<noOfParams; i++) {
             out += "<p><label>";
             out += paramNames[i];
-            out +=  " </label><input type=text name=";
+            out +=  " </label><input type='text' name=''";
             out += i + USER_PARAM_ID;
-            out += " /></p>";
+            out += "'' /></p>";
           }
         }
-        out += "<p><input type=submit /></p></form></body></html>";
+        out += "<p><input type='submit'' /></p></form></body></html>";
         server.send(200, "text/html", out);
       } else if (requestMethod == HTTP_POST) {
         char argName[8];
