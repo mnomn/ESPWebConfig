@@ -50,6 +50,7 @@ char* ESPWebConfig::getParameter(const char *name) {
 }
 
 void ESPWebConfig::clearConfig() {
+  Serial.println("Clear config.");
   EEPROM.write(0, 0);
   EEPROM.commit();
 }
@@ -58,35 +59,25 @@ void ESPWebConfig::checkReset() {
   if (this->_resetPin < 0) {
     return;
   }
-#if 0
   int val = digitalRead(this->_resetPin);
-
   if (val == HIGH) {
-    // Low -> High. Buttton released.
-    // Calculate how long it was pressed.
     if (this->_resetTime > 0) {
+      // Low -> High. Buttton released.
+      // Calculate how long it was pressed.
       unsigned long now = millis();
-      // Detected press
-      this->_resetTime = 1;
-      Serial.print("Released after ");
-      Serial.println(this->_resetTime - now);
+      if (now - this->_resetTime  > LONGPRESS_MS) {
+        this->clearConfig();
+        ESP.restart();
+      }
       this->_resetTime = 0;
     }
   } else {
-    unsigned long now = millis();
     // Button pressed
     if (this->_resetTime == 0) {
-      // First detection.
-      // Low -> high -> low
-      this->_resetTime = now;
+      Serial.println("Reset button pressed");
+      this->_resetTime = millis();
     }
-    if (this->_resetTime - now  > LONGPRESS_MS) {
-      Serial.print("Pressed ");
-      Serial.println(this->_resetTime - now);
-    }
-
   }
-#endif
 }
 
 

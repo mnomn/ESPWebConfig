@@ -32,10 +32,12 @@ public:
     /* Create ESPConfig object.
        configPassword: Password to login to the config AP.
                        Null for no password.
-       resetPin:       Pin to use to reset config.
-                       Longpress to reset and reboot into config mode.
-       paramNames: List of parameters to connfigure in in the web interface.
-       noOfParameters: Number of parameters in ParamNames list
+       resetPin:       Pin to use to reset config. Conect to ground to reset.
+                       Typically connect a button between Pin and gnd.
+                       longpress 5 seconds to reset and reboot into config mode.
+       paramNames:     List of parameters to connfigure in in the web interface.
+       noOfParameters: Number of parameters in ParamNames list, null for no
+                       custom parameters (Wifi parameters will always be shown).
        */
     ESPWebConfig( int resetPin, const char* configPassword = NULL,
                  String* paramNames = {}, int noOfParameters = 0);

@@ -13,11 +13,12 @@
  The device will get new IP. When you browse to the new ip number you will
  see a "Hello world" greeting.
  
- (Long press reset not implemented)
 */
 
 ESP8266WebServer server(80);
-int resetPin = -1; // No reset pin configured (not implemented in lib)
+/* When pin/GPIO 4 is low for 5 sec or more,
+the device will clear config and restart into config mode. */
+int resetPin = 4;
 ESPWebConfig espConfig(resetPin);
 
 void handleRoot() {
