@@ -15,5 +15,3 @@ It will get a new IP number.
 
 The wifi stuff above is always there, but you can add extra parameters during config,
 that you can use during normal execution. Se examples/CustomWebConfig.
-
-TODO: Prettier.

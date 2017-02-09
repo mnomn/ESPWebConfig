@@ -44,25 +44,26 @@ class HttpConfigHandler : public RequestHandler {
       }
       if (requestMethod == HTTP_GET) {
         String out =
-        "<!DOCTYPE html><html><head><style type=text/css>"
-        "body { margin:5% } form p label {display:block;float:left;width:100px;}"
+        F("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<style type=text/css>"
+        "body { margin:5%; font-family: Arial;} form p label {display:block;float:left;width:100px;}"
         "</style></head>"
-        "<body><h1>Configure me!</h1><form action='/' method='post'>"
+        "<body><h1>Configure me!</h1><form action=\"/\" method=\"post\">"
         "<h3>Wifi configuration</h3>"
-        "<p><label>SSID </label><input name=1 type='text'/></p>"
-        "<p><label>Password </label><input name=2 type='password'/></p>";
+        "<p><label>SSID </label><input name=1 type=\"text\"/></p>"
+        "<p><label>Password </label><input name=2 type=\"password\"/></p>");
 
         if (noOfParams) {
-          out += "<h3>Parameters</h3>";
+          out += F("<h3>Parameters</h3>");
           for (int i = 0; i<noOfParams; i++) {
-            out += "<p><label>";
+            out += F("<p><label>");
             out += paramNames[i];
-            out +=  " </label><input type='text' name=''";
+            out +=  F(" </label><input type=\"text\" name=\"");
             out += i + USER_PARAM_ID;
-            out += "'' /></p>";
+            out += F("\" /></p>");
           }
         }
-        out += "<p><input type='submit'' /></p></form></body></html>";
+        out += F("<p><input type=\"submit\" /></p></form></body></html>");
         server.send(200, "text/html", out);
       } else if (requestMethod == HTTP_POST) {
         char argName[8];
@@ -93,7 +94,7 @@ class HttpConfigHandler : public RequestHandler {
           address++;
 	    }
         EEPROM.commit();
-        server.send(200, "text/html", "<html><body><h1>Config done. Restarting.</h1></body></html>");
+        server.send(200, "text/html", F("<html><body><h1>Config done. Restarting.</h1></body></html>"));
         ESP.restart();
       } else {
         return false;

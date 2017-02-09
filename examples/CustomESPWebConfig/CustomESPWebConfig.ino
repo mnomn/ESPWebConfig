@@ -21,6 +21,7 @@
 // Strings are both used to display UI and find value after config is done.
 const char* GREETING_KEY = "Greeting";
 const char* NAME_KEY = "Name";
+
 // Convenient pointers to parameter values, so they only need to be read once.
 char* greeting;
 char* name;
@@ -32,7 +33,7 @@ int resetPin = -1; // No reset pin configured (not implemented in lib)
 ESPWebConfig espConfig(resetPin, "configpass", parameters, 2);
 
 void handleRoot() {
-  String out = "<html><body><h1>HelloESPWebConfig</h1>";
+  String out = F("<html><body><h1>HelloESPWebConfig</h1>");
   out = "<h3>" + String(greeting) + ", nice to meet you " + String(name) +
     ".</h3></body></html>";
   server.send(200, "text/html", out);
@@ -43,22 +44,22 @@ void setup() {
   while(!Serial) {
     delay(1);
   }
-  Serial.println("Starting ...");
+  Serial.println(F("Starting ..."));
 
   if (espConfig.setup(server)) {
-    Serial.println("Normal boot");
+    Serial.println(F("Normal boot"));
 
     // Get config parameters and print them
     greeting = espConfig.getParameter(GREETING_KEY);
     name = espConfig.getParameter(NAME_KEY);
-    Serial.print("Greeting: ");
+    Serial.print(GREETING_KEY);
     Serial.println(greeting?greeting:"NULL");
-    Serial.print("Name: ");
+    Serial.print(NAME_KEY);
     Serial.println(name?name:"NULL");
 
     // Try to get unknown parameter, for testing purpose.
     char* unk = espConfig.getParameter("unk");
-    Serial.print("UNK: ");
+    Serial.print("Undefined: ");
     Serial.println(unk?unk:"NULL");
 
     // Print IP
@@ -69,7 +70,7 @@ void setup() {
     server.on ("/restart", HTTP_POST, handleRestart);
     server.on ("/", handleRoot);
   } else {
-    Serial.println("Config mode");
+    Serial.println(F("Config mode"));
   }
 
   server.begin();
@@ -89,15 +90,15 @@ void handleConfigReset() {
   // For development and debug.
   // Probably a bad idea to reset with URL post. Better to use hardware button.
   // Only handles POST to make accidental reset less likely.
-  server.send(200, "text/text", "Config reset!\n");
-  Serial.println("Clear config");
+  server.send(200, "text/html", "Config reset!\n");
+  Serial.println(F("Clear config"));
   espConfig.clearConfig();
   ESP.restart();
 }
 
 void handleRestart() {
-  server.send(200, "text/text", "Restart...\n");
-  Serial.println("Clear config");
+  server.send(200, "text/html", F("Restart...\n"));
+  Serial.println(F("Clear config"));
   ESP.restart();
 
 }
