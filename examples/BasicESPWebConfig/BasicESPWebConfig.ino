@@ -33,11 +33,15 @@ void setup() {
   Serial.println("Starting ...");
 
   if (espConfig.setup(server)) {
-    Serial.println("Normal boot");
+    // Print ip so we do not need to find it in the router.
+    Serial.print("Normal boot: ");
     Serial.println(WiFi.localIP());
+
+    // Set up hander for the normal web pages.
     server.on ("/", handleRoot);
+
   } else {
-    Serial.println("Config mode");
+    Serial.println("Config mode.");
   }
 
   server.begin();

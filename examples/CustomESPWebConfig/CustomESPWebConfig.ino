@@ -47,7 +47,8 @@ void setup() {
   Serial.println(F("Starting ..."));
 
   if (espConfig.setup(server)) {
-    Serial.println(F("Normal boot"));
+    Serial.print(F("Normal boot: "));
+    Serial.println(WiFi.localIP());
 
     // Get config parameters and print them
     greeting = espConfig.getParameter(GREETING_KEY);
@@ -61,9 +62,6 @@ void setup() {
     char* unk = espConfig.getParameter("unk");
     Serial.print("Undefined: ");
     Serial.println(unk?unk:"NULL");
-
-    // Print IP
-    Serial.println(WiFi.localIP());
 
     // Configure
     server.on ("/configreset", HTTP_POST, handleConfigReset);

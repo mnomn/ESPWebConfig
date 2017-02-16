@@ -11,12 +11,12 @@ ESPWebConfig::ESPWebConfig(int resetPin, const char* configPassword,
   _paramNames = paramNames;
   _noOfParameters = noOfParameters;
   _resetPin = resetPin;
-  if (_resetPin >= 0) {
-    pinMode(_resetPin,INPUT_PULLUP);
-  }
 }
 
 bool ESPWebConfig::setup(ESP8266WebServer& server) {
+  if (_resetPin >= 0) {
+    pinMode(_resetPin,INPUT_PULLUP);
+  }
   if (this->_readConfig()) {
     WiFi.mode(WIFI_STA);
     char* ssid = this->_getParameterById(SSID_ID);
