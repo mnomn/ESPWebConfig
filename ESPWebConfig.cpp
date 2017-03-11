@@ -37,6 +37,12 @@ bool ESPWebConfig::setup(ESP8266WebServer& server) {
   return false;
 }
 
+/* Set text that will help the user understand what to write in the config.
+    */
+void ESPWebConfig::setHelpText(char* helpText) {
+  _helpText = helpText;
+}
+
 char* ESPWebConfig::getParameter(const char *name) {
 #if DEBUG_PRINT
   Serial.print("getParameter for ");
@@ -103,7 +109,7 @@ void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
   } else {
     WiFi.softAP(ap_name);
   }
-  server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters));
+  server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters, _helpText));
 }
 
 /* Find id of variablename. 1, 2, ..., return 0 on failure. */

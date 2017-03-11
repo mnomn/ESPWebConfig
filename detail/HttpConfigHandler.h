@@ -20,7 +20,7 @@ id 1 and 2 is for wifi config. id 3 and higher is for user defined parameters.
 class HttpConfigHandler : public RequestHandler {
   public:
     HttpConfigHandler(const char* uri = "config", const String* ParamNames = {},
-    int NoOfParameters = 0)
+    int NoOfParameters = 0, char* HelpText = NULL)
     : _uri(uri)
     {
       paramNames = ParamNames;
@@ -31,6 +31,7 @@ class HttpConfigHandler : public RequestHandler {
       }
 #endif
       noOfParams = NoOfParameters;
+      helpText = HelpText;
       Serial.println(uri);
     }
 
@@ -55,6 +56,11 @@ class HttpConfigHandler : public RequestHandler {
 
         if (noOfParams) {
           out += F("<h3>Parameters</h3>");
+          if (helpText) {
+            out += "<p>";
+            out += helpText;
+            out += "</p>";
+          }
           for (int i = 0; i<noOfParams; i++) {
             out += F("<p><label>");
             out += paramNames[i];
@@ -94,7 +100,7 @@ class HttpConfigHandler : public RequestHandler {
           address++;
 	    }
         EEPROM.commit();
-        server.send(200, "text/html", F("<html><body><h1>Config done. Restarting.</h1></body></html>"));
+        server.send(200, "text/html", F("<html><body><h1>Configuration done. Restarting.</h1></body></html>"));
         ESP.restart();
       } else {
         return false;
@@ -106,6 +112,7 @@ class HttpConfigHandler : public RequestHandler {
     String _uri;
     const String* paramNames;
     int noOfParams;
+    char* helpText;
 };
 
 #endif

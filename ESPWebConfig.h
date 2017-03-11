@@ -43,6 +43,9 @@ public:
        */
     ESPWebConfig( int resetPin, const char* configPassword = NULL,
                  String* paramNames = {}, int noOfParameters = 0);
+    /* Set text that will help the user understand what to write in the config.
+       */
+    void setHelpText(char* helpText);
     /* Call from arduino setup function.
        Will read config. If not configured start web config.
        Return true if system is configured.
@@ -68,6 +71,8 @@ private:
     const String* _paramNames;
     const char* _configPassword;
     int _resetPin;
+    char* _helpText;
+
     unsigned long _resetTime = 0;
 
     // Private because users do not know mumerical id
