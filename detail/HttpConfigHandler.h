@@ -12,6 +12,8 @@
 #define NO_OF_INTERNAL_PARAMS 2
 #define USER_PARAM_ID 3
 
+#define DEBUG_PRINT 0
+
 /*
 Eeprom format: CONFIG_VALID, id1, chars, 0, id2, 0, ... 
 CONFIG_VALID,1,'v','a','l','1',0,2,'v','a','l','2',0
@@ -44,6 +46,8 @@ class HttpConfigHandler : public RequestHandler {
         return false;
       }
       if (requestMethod == HTTP_GET) {
+        String label;
+        String inputtype;
         String out =
         F("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         "<style type=text/css>"
@@ -51,8 +55,8 @@ class HttpConfigHandler : public RequestHandler {
         "</style></head>"
         "<body><h1>Configure me!</h1><form action=\"/\" method=\"post\">"
         "<h3>Wifi configuration</h3>"
-        "<p><label>SSID </label><input name=1 type=\"text\"/></p>"
-        "<p><label>Password </label><input name=2 type=\"password\"/></p>");
+        "<p><label>SSID* </label><input name=1 type=\"text\" required/></p>"
+        "<p><label>Password* </label><input name=2 type=\"password\" required/></p>\n");
 
         if (noOfParams) {
           out += F("<h3>Parameters</h3>");
@@ -62,14 +66,35 @@ class HttpConfigHandler : public RequestHandler {
             out += "</p>";
           }
           for (int i = 0; i<noOfParams; i++) {
-            out += F("<p><label>");
-            out += paramNames[i];
-            out +=  F(" </label><input type=\"text\" name=\"");
-            out += i + USER_PARAM_ID;
-            out += F("\" /></p>");
+            int ix = paramNames[i].indexOf('|');
+            if ( ix > 0) {
+              label = paramNames[i].substring(0, ix);
+              inputtype = paramNames[i].substring(ix+1);
+              inputtype.trim();
+            } else {
+              label = paramNames[i];
+            }
+
+            out += "<p><label>";
+            out += label;
+            out +=  " </label><input ";
+            if (inputtype && inputtype.length() > 0) {
+              out += "type=\"";
+              out += inputtype;
+              out += "\" ";
+            }
+            // The name in is a number
+            out += "name=\"";
+            out += String(i + USER_PARAM_ID);
+
+            out += "\" ";
+            if (label.endsWith("*")) {
+              out += "required ";
+            }
+            out += "/></p>\n";
           }
         }
-        out += F("<p><input type=\"submit\" /></p></form></body></html>");
+        out += F("<p><input type=\"submit\" /></p></form><br></body></html>");
         server.send(200, "text/html", out);
       } else if (requestMethod == HTTP_POST) {
         char argName[8];

@@ -4,7 +4,6 @@
 
 #define LONGPRESS_MS 5000
 
-#define DEBUG_PRINT 0
 ESPWebConfig::ESPWebConfig(int resetPin, const char* configPassword,
                            String* paramNames, int noOfParameters) {
   _configPassword = configPassword;
@@ -44,14 +43,7 @@ void ESPWebConfig::setHelpText(char* helpText) {
 }
 
 char* ESPWebConfig::getParameter(const char *name) {
-#if DEBUG_PRINT
-  Serial.print("getParameter for ");
-  Serial.print(name);
-#endif
   byte id = this->_nameToId(name);
-#if DEBUG_PRINT
-  Serial.print(id);
-#endif
   return this->_getParameterById(id);
 }
 
@@ -132,6 +124,10 @@ bool ESPWebConfig::_readConfig()
 {
   EEPROM.begin(512);
   _eepromData[0] = EEPROM.read(0);
+#if DEBUG_PRINT
+  Serial.println("EEPROM:");
+  Serial.print(_eepromData[0]);
+#endif
   if (_eepromData[0] != CONFIG_VALID) {
     return false;
   }
@@ -140,14 +136,15 @@ bool ESPWebConfig::_readConfig()
   // Read all eeprom into memory
   while (eeprom_address < 512) {
     _eepromData[eeprom_address] = EEPROM.read(eeprom_address);
-    eeprom_address++;
 #if DEBUG_PRINT
-    Serial.print(_eepromData[eeprom_address]);
-    Serial.print(" ");
+    String dbg = " ";
+    dbg += _eepromData[eeprom_address];
+    Serial.print(dbg.c_str());
     if (eeprom_address%32 == 0) {
       Serial.println();
     }
 #endif
+    eeprom_address++;
   }
   // Hard code end marker
   _eepromData[511] = 0;
@@ -169,9 +166,5 @@ char* ESPWebConfig::_getParameterById(const int id) {
   }
   // Found index, skip one top point to string
   tmp++;
-#if DEBUG_PRINT
-  Serial.print("param found at ");
-  Serial.println((int)(tmp - _eepromData));
-#endif
   return (char*)tmp;
 }

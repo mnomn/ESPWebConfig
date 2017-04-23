@@ -14,28 +14,43 @@
  the custom parameters will be printed when browsing to new ip number.
 
  You arduino sketch must define its own url handlers.
-
- (Long press reset not implemented)
 */
 
-// Strings are both used to display UI and find value after config is done.
-const char* GREETING_KEY = "Greeting";
+/* Strings are both used to display UI and find value after config is done.
+ * Names ending with * will be mandatoy
+ * Input types:
+ * Specify type by appendng "|type", which will not be displayed
+ * Input type can be anything the html defenition considers a type.
+ * Default input type is text. Not all types are suitable, like radio and select/option for instance.
+ */
+const char* GREETING_KEY = "Greeting*";
 const char* NAME_KEY = "Name";
+const char* DATE_KEY = "Date*|date";
+const char* CHECK_KEY = "Check|checkbox";
 
 // Convenient pointers to parameter values, so they only need to be read once.
 char* greeting;
 char* name;
+char* date;
+char* checked;
 
 // TODO: can server and begin moove into ESPConfig
 ESP8266WebServer server(80);
-String parameters[] = {GREETING_KEY, NAME_KEY};
+String parameters[] = {GREETING_KEY, NAME_KEY, DATE_KEY, CHECK_KEY};
 int resetPin = -1; // No reset pin configured (not implemented in lib)
-ESPWebConfig espConfig(resetPin, "configpass", parameters, 2);
+ESPWebConfig espConfig(resetPin, "configpass", parameters, 4);
 
 void handleRoot() {
   String out = F("<html><body><h1>HelloESPWebConfig</h1>");
-  out = "<h3>" + String(greeting) + ", nice to meet you " + String(name) +
-    ".</h3></body></html>";
+    out += "<h3>";
+    out += greeting;
+    out += ", nice to meet you ";
+    out += name;
+    out += "<br>Date: ";
+    out += date?date:"NULL";
+    out += ", Checked: ";
+    out += checked?checked:"NULL";
+    out += ".</h3></body></html>";
   server.send(200, "text/html", out);
 }
 
@@ -53,10 +68,17 @@ void setup() {
     // Get config parameters and print them
     greeting = espConfig.getParameter(GREETING_KEY);
     name = espConfig.getParameter(NAME_KEY);
+    date = espConfig.getParameter(DATE_KEY);
+    checked = espConfig.getParameter(CHECK_KEY);
+
     Serial.print(GREETING_KEY);
     Serial.println(greeting?greeting:"NULL");
     Serial.print(NAME_KEY);
     Serial.println(name?name:"NULL");
+    Serial.print(DATE_KEY);
+    Serial.println(date?date:"NULL");
+    Serial.print(CHECK_KEY);
+    Serial.println(checked?checked:"NULL");
 
     // Try to get unknown parameter, for testing purpose.
     char* unk = espConfig.getParameter("unk");
