@@ -37,7 +37,7 @@ char* checked;
 // TODO: can server and begin moove into ESPConfig
 ESP8266WebServer server(80);
 String parameters[] = {GREETING_KEY, NAME_KEY, DATE_KEY, CHECK_KEY};
-int resetPin = -1; // No reset pin configured (not implemented in lib)
+int resetPin = -1; // No reset pin configured in this example
 ESPWebConfig espConfig(resetPin, "configpass", parameters, 4);
 
 void handleRoot() {
