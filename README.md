@@ -1,7 +1,7 @@
 # ESPWebConfig
 Arduino web based configuration library for ESP8266 chip.
 
-Configure the device in a web inteface. After first boot it will act as an access point,
+Configure the wifi of the device device in a web inteface. After first boot it will act as an access point,
 so you don't need ssid and password hard coded in your program.
 
 ![Connect to AP to configure](examples/BasicESPWebConfig/esp_ap.png)
@@ -19,7 +19,8 @@ The wifi stuff above is always there, but you can add extra parameters during co
 that you can use during normal execution.
 Add them as an array of strings to the constructor:
 
-```const char* GREETING_KEY = "Greeting*";
+```
+const char* GREETING_KEY = "Greeting*";
 const char* NAME_KEY = "Name";
 const char* DATE_KEY = "Date*|date";
 const char* CHECK_KEY = "Check|checkbox";
