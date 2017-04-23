@@ -37,7 +37,7 @@ To set a parameter as required, simply add an asterix in the end.
 To set input type use the labelname|typename notation, where labelname will be shown in the web UI and typename be used as type for that html input. There is no check that the type is valid or usefull, it will just set type="typename" in the code.
 For example "radio" button doesn't work, it requires more stuff in the html code to work. Simple types like date, password and url should work great.
 
-![Connect to AP to configure](examples/CustonESPWebConfig/custom_config.png)
+![Connect to AP to configure](examples/CustonESPWebConfig/config_custom.png)
 
 After config you can read the variables with the same key you defined in the setup: `greeting = espConfig.getParameter(GREETING_KEY);`
 
