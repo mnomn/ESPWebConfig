@@ -73,6 +73,7 @@ class HttpConfigHandler : public RequestHandler {
               inputtype.trim();
             } else {
               label = paramNames[i];
+              inputtype = "";
             }
 
             out += "<p><label>";
