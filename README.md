@@ -26,8 +26,7 @@ const char* DATE_KEY = "Date*|date";
 const char* CHECK_KEY = "Check|checkbox";
 
 String parameters[] = {GREETING_KEY, NAME_KEY, DATE_KEY, CHECK_KEY};
-int resetPin = -1; // No reset pin configured in this example
-ESPWebConfig espConfig(resetPin, "configpass", parameters, 4);
+ESPWebConfig espConfig("configpass", parameters, 4);
 ```
 ## Web sugar
 Appart from the name you can also set input type and mark a parameter as required in the web UI.
