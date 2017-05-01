@@ -2,20 +2,14 @@
 #include <ESP8266WiFi.h>
 #include <detail/HttpConfigHandler.h>
 
-#define LONGPRESS_MS 5000
-
-ESPWebConfig::ESPWebConfig(int resetPin, const char* configPassword,
-                           String* paramNames, int noOfParameters) {
+ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int noOfParameters) {
   _configPassword = configPassword;
   _paramNames = paramNames;
   _noOfParameters = noOfParameters;
-  _resetPin = resetPin;
 }
 
 bool ESPWebConfig::setup(ESP8266WebServer& server) {
-  if (_resetPin >= 0) {
-    pinMode(_resetPin,INPUT_PULLUP);
-  }
+  _configMode = 0;
   if (this->_readConfig()) {
     WiFi.mode(WIFI_STA);
     char* ssid = this->_getParameterById(SSID_ID);
@@ -33,11 +27,10 @@ bool ESPWebConfig::setup(ESP8266WebServer& server) {
     return true;
   }
   this->_setupConfig(server);
+  _configMode = 1;
   return false;
 }
 
-/* Set text that will help the user understand what to write in the config.
-    */
 void ESPWebConfig::setHelpText(char* helpText) {
   _helpText = helpText;
 }
@@ -53,31 +46,9 @@ void ESPWebConfig::clearConfig() {
   EEPROM.commit();
 }
 
-void ESPWebConfig::checkReset() {
-  if (this->_resetPin < 0) {
-    return;
+  int ESPWebConfig::isConfigMode() {
+    return _configMode;
   }
-  int val = digitalRead(this->_resetPin);
-  if (val == HIGH) {
-    if (this->_resetTime > 0) {
-      // Low -> High. Buttton released.
-      // Calculate how long it was pressed.
-      unsigned long now = millis();
-      if (now - this->_resetTime  > LONGPRESS_MS) {
-        this->clearConfig();
-        ESP.restart();
-      }
-      this->_resetTime = 0;
-    }
-  } else {
-    // Button pressed
-    if (this->_resetTime == 0) {
-      Serial.println("Reset button pressed");
-      this->_resetTime = millis();
-    }
-  }
-}
-
 
 ///////// Private functions ///////////////////
 

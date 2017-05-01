@@ -15,11 +15,11 @@
  
 */
 
-ESP8266WebServer server(80);
-/* When pin/GPIO 4 is low for 5 sec or more,
-the device will clear config and restart into config mode. */
+/* Connfigure a pin that will reset config if grounded */
 int resetPin = 4;
-ESPWebConfig espConfig(resetPin);
+
+ESP8266WebServer server(80);
+ESPWebConfig espConfig;
 
 void handleRoot() {
   server.send(200, "text/html", "<html><body><h1>Hello ESPWebConfig</h1></body></html>");
@@ -45,9 +45,14 @@ void setup() {
   }
 
   server.begin();
+  /* Configure a reset pin. Connect resetPin to ground to clear config */
+  pinMode(resetPin, INPUT_PULLUP);
 }
 
 void loop() {
-  espConfig.checkReset();
+  if (!espConfig.isConfigMode() && digitalRead(resetPin) == LOW) {
+    espConfig.clearConfig();
+    ESP.restart();
+  }
   server.handleClient();
 }

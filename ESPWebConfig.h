@@ -30,19 +30,12 @@ class ESPWebConfig
 {
 public:
     /* Create ESPConfig object.
-       resetPin:       Pin to use to reset config. Typically connect a button between
-                       resetPin in and gnd. Longpress 5 seconds to reset and reboot into
-                       config mode. Device will reboot when button is released. that way you
-                       can use GPIO 0 as button without device going to flash mode after reboot.
-                       The library set resetPin to input with internal pull up.
-       configPassword: Password to login to the config AP.
-                       Null for no password.
        paramNames:     List of parameters to connfigure in in the web interface.
        noOfParameters: Number of parameters in ParamNames list, null for no
                        custom parameters (Wifi parameters will always be shown).
        */
-    ESPWebConfig( int resetPin, const char* configPassword = NULL,
-                 String* paramNames = {}, int noOfParameters = 0);
+    ESPWebConfig(const char* configPassword = NULL, String* paramNames = {}, int noOfParameters = 0);
+
     /* Set text that will help the user understand what to write in the config.
        */
     void setHelpText(char* helpText);
@@ -59,18 +52,16 @@ public:
        return: parameter value as char*, or null if not found.
        */
     char* getParameter(const char *name);
-
-    /* Call in arduino loop function.
-       Device will clear config and restart if reset pin long pressed.
-       */
-    void checkReset();
+    /* Ask if it is config mode (and not normal execution) */
+    int isConfigMode();
 
 private:
-    byte _eepromData[512];
-    int _noOfParameters;
-    const String* _paramNames;
     const char* _configPassword;
-    int _resetPin;
+    const String* _paramNames;
+    int _noOfParameters;
+
+    int _configMode = 0;
+    byte _eepromData[512];
     char* _helpText;
 
     unsigned long _resetTime = 0;
