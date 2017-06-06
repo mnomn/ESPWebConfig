@@ -1,8 +1,20 @@
 # ESPWebConfig
 Arduino web based configuration library for ESP8266 chip.
 
-Configure the wifi of the device device in a web inteface. After first boot it will act as an access point,
+Configure the wifi of the device in a web inteface. After first boot it will act as an access point,
 so you don't need ssid and password hard coded in your program.
+
+```
+ESPWebConfig espConfig;
+
+setup() {
+  if (espConfig.setup(server)) {
+    // Your normal code ...
+  } else {
+    // In config mode. No need to do anything.
+  }
+}
+```
 
 ![Connect to AP to configure](examples/BasicESPWebConfig/esp_ap.png)
 ![Connect to AP to configure](examples/BasicESPWebConfig/esp_cfg2.png)
@@ -26,8 +38,7 @@ const char* DATE_KEY = "Date*|date";
 const char* CHECK_KEY = "Check|checkbox";
 
 String parameters[] = {GREETING_KEY, NAME_KEY, DATE_KEY, CHECK_KEY};
-int resetPin = -1; // No reset pin configured in this example
-ESPWebConfig espConfig(resetPin, "configpass", parameters, 4);
+ESPWebConfig espConfig("configpass", parameters, 4);
 ```
 ## Web sugar
 Appart from the name you can also set input type and mark a parameter as required in the web UI.
