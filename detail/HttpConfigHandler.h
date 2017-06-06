@@ -95,7 +95,8 @@ class HttpConfigHandler : public RequestHandler {
             out += "/></p>\n";
           }
         }
-        out += F("<p><input type=\"submit\" /></p></form><br></body></html>");
+        out += F("<p><input type=\"submit\" name=\"kp\" value=\"Keep old config\" formnovalidate/></p>"
+                 "<p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>");
         server.send(200, "text/html", out);
       } else if (requestMethod == HTTP_POST) {
         char argName[8];
@@ -103,6 +104,14 @@ class HttpConfigHandler : public RequestHandler {
         const char* c;
         EEPROM.write(address, CONFIG_VALID);
         address++;
+        // Hack to "revert config" to previous values
+        String keep_previous = server.arg("kp");
+        if (keep_previous.length()>0) {
+          EEPROM.commit();
+          server.send(200, "text/html", F("<html><body><h1>Configuration done (kept old). Restarting.</h1></body></html>"));
+          ESP.restart();
+        }
+
         for (int i = 1; i <= (noOfParams + NO_OF_INTERNAL_PARAMS); i++) {
           if (!itoa(i, argName, 10)) {
               break;
@@ -124,7 +133,7 @@ class HttpConfigHandler : public RequestHandler {
           }
           EEPROM.write(address, 0);
           address++;
-	    }
+        }
         EEPROM.commit();
         server.send(200, "text/html", F("<html><body><h1>Configuration done. Restarting.</h1></body></html>"));
         ESP.restart();
