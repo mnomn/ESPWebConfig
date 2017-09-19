@@ -4,55 +4,46 @@
 /*
  Configure Wifi after boot. No need to "hard code" SSID and password in code.
 
- First boot (or after longpress):
- Device will be an access point named
- ESP_<ipnumber>, which you access to configure normal WIFI and other parameters.
- User opens <ipnumber> in browser. Enter Wifi name and password.
+ First boot (or after reset):
+ Device will be an access point named ESP_<ipnumber>, which you access to
+ configure normal WIFI and other parameters.
+ User opens <ipnumber> in browser and enter Wifi name and password.
 
- After config and restart:
- The device will get new IP. When you browse to the new ip number you will
- see a "Hello world" greeting.
- 
+ After config and restart the device will get new IP. Now you can write networking code in sketch (WiFiClient, mqtt, etc)
 */
 
-/* Connfigure a pin that will reset config if grounded */
+/* Connfigure a pin that will reset config if grounded (button pressed) */
 int resetPin = 4;
 
-ESP8266WebServer server(80);
 ESPWebConfig espConfig;
 
-void handleRoot() {
-  server.send(200, "text/html", "<html><body><h1>Hello ESPWebConfig</h1></body></html>");
-}
-
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(74880);
   while(!Serial) {
     delay(1);
   }
+  Serial.println("");
   Serial.println("Starting ...");
 
-  if (espConfig.setup(server)) {
+  if (espConfig.setup()) {
     // Print ip so we do not need to find it in the router.
     Serial.print("Normal boot: ");
     Serial.println(WiFi.localIP());
-
-    // Set up hander for the normal web pages.
-    server.on ("/", handleRoot);
-
   } else {
     Serial.println("Config mode.");
   }
 
-  server.begin();
   /* Configure a reset pin. Connect resetPin to ground to clear config */
   pinMode(resetPin, INPUT_PULLUP);
 }
 
 void loop() {
+  // Only needed if you do not have a server.
+  espConfig.handleClient();
+
+  // Restart by pressing a button
   if (!espConfig.isConfigMode() && digitalRead(resetPin) == LOW) {
     espConfig.clearConfig();
     ESP.restart();
   }
-  server.handleClient();
 }

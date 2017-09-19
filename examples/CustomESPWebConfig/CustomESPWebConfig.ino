@@ -54,7 +54,7 @@ void handleRoot() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(74880);
   while(!Serial) {
     delay(1);
   }

@@ -40,22 +40,33 @@ public:
        */
     void setHelpText(char* helpText);
     /* Call from arduino setup function.
+       Use common server for config and normal operation.
        Will read config. If not configured start web config.
        Return true if system is configured.
        */
     bool setup(ESP8266WebServer& server);
+    /* Call from arduino setup function.
+       If no server in in sketch, config will create a temorary.
+       Will read config. If not configured start web config.
+       Return true if system is configured.
+       */
+    bool setup();
     /* Call this to clear the config. Will not restart device.
        Call ESP.restart() from main program to restart. */
     void clearConfig();
     /* After config, call this to read parameter values.
-       name: Use same string as in constructir.
+       name: Use same string as in constructur.
        return: parameter value as char*, or null if not found.
        */
     char* getParameter(const char *name);
     /* Ask if it is config mode (and not normal execution) */
     int isConfigMode();
+    /* Call from loop to handle config (Not needed if sketch calls
+      server.handleClient(); or you know config is done) */
+    int handleClient();
 
 private:
+    ESP8266WebServer *_server = NULL;
     const char* _configPassword;
     const String* _paramNames;
     int _noOfParameters;

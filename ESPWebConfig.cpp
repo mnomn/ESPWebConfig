@@ -8,6 +8,22 @@ ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int n
   _noOfParameters = noOfParameters;
 }
 
+bool ESPWebConfig::setup() {
+  bool retval;
+  _server = new ESP8266WebServer(80);
+
+  retval = this->setup(*_server);
+  if (retval) {
+    // Device configured, delete server
+    delete _server;
+    _server = NULL;
+  } else {
+    // Device not configured, start server
+    _server->begin();
+  }
+  return retval;
+}
+
 bool ESPWebConfig::setup(ESP8266WebServer& server) {
   _configMode = 0;
   if (this->_readConfig()) {
@@ -46,9 +62,16 @@ void ESPWebConfig::clearConfig() {
   EEPROM.commit();
 }
 
-  int ESPWebConfig::isConfigMode() {
-    return _configMode;
+int ESPWebConfig::isConfigMode() {
+  return _configMode;
+}
+
+int ESPWebConfig::handleClient() {
+  if (_server && _configMode) {
+    _server->handleClient();
   }
+  return !_configMode;
+}
 
 ///////// Private functions ///////////////////
 

@@ -14,6 +14,8 @@
 
 #define DEBUG_PRINT 0
 
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 /*
 Eeprom format: CONFIG_VALID, id1, chars, 0, id2, 0, ... 
 CONFIG_VALID,1,'v','a','l','1',0,2,'v','a','l','2',0
@@ -38,6 +40,8 @@ class HttpConfigHandler : public RequestHandler {
     }
 
     bool canHandle(HTTPMethod method, String uri) {
+      UNUSED(method);
+      UNUSED(uri);
       return true;
     }
 
