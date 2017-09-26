@@ -33,7 +33,7 @@ Google responded with code 301
 ```
 
 
-# More features: examples/BasicESPWebConfig
+# More features: examples/CustomESPWebConfig
 
 The wifi stuff above is always there, but you can add extra parameters during config,
 that you can use during normal execution.
@@ -48,7 +48,7 @@ const char* CHECK_KEY = "Check|checkbox";
 String parameters[] = {GREETING_KEY, NAME_KEY, DATE_KEY, CHECK_KEY};
 ESPWebConfig espConfig("configpass", parameters, 4);
 ```
-## Web sugar
+### Web sugar
 Appart from the name you can also set input type and mark a parameter as required in the web UI.
 
 To set a parameter as required, simply add an asterix in the end.
