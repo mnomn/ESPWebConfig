@@ -60,37 +60,35 @@ void setup() {
   }
   Serial.println(F("Starting ..."));
 
-  if (espConfig.setup(server)) {
-    Serial.print(F("Normal boot: "));
-    Serial.println(WiFi.localIP());
+  espConfig.setup();
 
-    // Get config parameters and print them
-    greeting = espConfig.getParameter(GREETING_KEY);
-    name = espConfig.getParameter(NAME_KEY);
-    date = espConfig.getParameter(DATE_KEY);
-    checked = espConfig.getParameter(CHECK_KEY);
+  Serial.print(F("Booting: "));
+  Serial.println(WiFi.localIP());
 
-    Serial.print(GREETING_KEY);
-    Serial.println(greeting?greeting:"NULL");
-    Serial.print(NAME_KEY);
-    Serial.println(name?name:"NULL");
-    Serial.print(DATE_KEY);
-    Serial.println(date?date:"NULL");
-    Serial.print(CHECK_KEY);
-    Serial.println(checked?checked:"NULL");
+  // Get config parameters and print them
+  greeting = espConfig.getParameter(GREETING_KEY);
+  name = espConfig.getParameter(NAME_KEY);
+  date = espConfig.getParameter(DATE_KEY);
+  checked = espConfig.getParameter(CHECK_KEY);
 
-    // Try to get unknown parameter, for testing purpose.
-    char* unk = espConfig.getParameter("unk");
-    Serial.print("Undefined: ");
-    Serial.println(unk?unk:"NULL");
+  Serial.print(GREETING_KEY);
+  Serial.println(greeting?greeting:"NULL");
+  Serial.print(NAME_KEY);
+  Serial.println(name?name:"NULL");
+  Serial.print(DATE_KEY);
+  Serial.println(date?date:"NULL");
+  Serial.print(CHECK_KEY);
+  Serial.println(checked?checked:"NULL");
 
-    // Configure
-    server.on ("/configreset", HTTP_POST, handleConfigReset);
-    server.on ("/restart", HTTP_POST, handleRestart);
-    server.on ("/", handleRoot);
-  } else {
-    Serial.println(F("Config mode"));
-  }
+  // Try to get unknown parameter, for testing purpose.
+  char* unk = espConfig.getParameter("unk");
+  Serial.print("Undefined: ");
+  Serial.println(unk?unk:"NULL");
+
+  // Configure
+  server.on ("/configreset", HTTP_POST, handleConfigReset);
+  server.on ("/restart", HTTP_POST, handleRestart);
+  server.on ("/", handleRoot);
 
   server.begin();
 }

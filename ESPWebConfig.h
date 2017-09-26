@@ -36,42 +36,32 @@ public:
        */
     ESPWebConfig(const char* configPassword = NULL, String* paramNames = {}, int noOfParameters = 0);
 
-    /* Set text that will help the user understand what to write in the config.
-       */
+    /* Set text that will help the user understand what to write in the config. */
     void setHelpText(char* helpText);
+
     /* Call from arduino setup function.
-       Use common server for config and normal operation.
-       Will read config. If not configured start web config.
-       Return true if system is configured.
-       */
-    bool setup(ESP8266WebServer& server);
-    /* Call from arduino setup function.
-       If no server in in sketch, config will create a temorary.
-       Will read config. If not configured start web config.
-       Return true if system is configured.
+       Read configuration parameter and connect to wifi.
+       If no configuration data, function will block, create AP and serve config web.
+       Return true if wifi connected.
+              false if wifi not connected.
+              (No return if no configuration, returns true false after config web filled in.)
        */
     bool setup();
+
     /* Call this to clear the config. Will not restart device.
        Call ESP.restart() from main program to restart. */
     void clearConfig();
+
     /* After config, call this to read parameter values.
        name: Use same string as in constructur.
-       return: parameter value as char*, or null if not found.
-       */
+       return: parameter value as char*, or null if not found. */
     char* getParameter(const char *name);
-    /* Ask if it is config mode (and not normal execution) */
-    int isConfigMode();
-    /* Call from loop to handle config (Not needed if sketch calls
-      server.handleClient(); or you know config is done) */
-    int handleClient();
 
 private:
-    ESP8266WebServer *_server = NULL;
     const char* _configPassword;
     const String* _paramNames;
     int _noOfParameters;
 
-    int _configMode = 0;
     byte _eepromData[512];
     char* _helpText;
 
@@ -82,5 +72,6 @@ private:
     void _setupConfig(ESP8266WebServer& server);
     byte _nameToId(const char* name);
     bool _readConfig();
+    bool _startWifi();
 };
 #endif // ESPWEBCONFIG_H

@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESPWebConfig.h>
+#include <ESP8266HTTPClient.h>
 
 /*
  Configure Wifi after boot. No need to "hard code" SSID and password in code.
@@ -13,7 +14,7 @@
 */
 
 /* Connfigure a pin that will reset config if grounded (button pressed) */
-int resetPin = 4;
+int resetPin = 0;
 
 ESPWebConfig espConfig;
 
@@ -25,25 +26,38 @@ void setup() {
   Serial.println("");
   Serial.println("Starting ...");
 
-  if (espConfig.setup()) {
-    // Print ip so we do not need to find it in the router.
-    Serial.print("Normal boot: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("Config mode.");
-  }
+  /* Read config values. If no config values it will block and
+     create an access point and serve the confg web UI. */
+  espConfig.setup();
+
+  // Print ip so we do not need to find it in the router.
+  Serial.print("Configuration done!");
+  Serial.println(WiFi.localIP());
 
   /* Configure a reset pin. Connect resetPin to ground to clear config */
   pinMode(resetPin, INPUT_PULLUP);
 }
 
 void loop() {
-  // Only needed if you do not have a server.
-  espConfig.handleClient();
-
   // Restart by pressing a button
-  if (!espConfig.isConfigMode() && digitalRead(resetPin) == LOW) {
+  if (digitalRead(resetPin) == LOW) {
+    Serial.print("Clear configuration");
     espConfig.clearConfig();
     ESP.restart();
+  }
+
+  // Verify that wifi works
+  static bool first = true;
+  if (first) {
+    HTTPClient http;
+    int httpCode;
+
+    first = false;
+    http.begin("http://google.com/robots.txt");
+    httpCode = http.GET();
+    Serial.println("Test wifi connection");
+    Serial.print("Google responded with code ");
+    Serial.print(httpCode);
+    http.end();
   }
 }

@@ -9,42 +9,17 @@ ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int n
 }
 
 bool ESPWebConfig::setup() {
-  bool retval;
-  _server = new ESP8266WebServer(80);
-
-  retval = this->setup(*_server);
-  if (retval) {
-    // Device configured, delete server
-    delete _server;
-    _server = NULL;
-  } else {
-    // Device not configured, start server
-    _server->begin();
-  }
-  return retval;
-}
-
-bool ESPWebConfig::setup(ESP8266WebServer& server) {
-  _configMode = 0;
-  if (this->_readConfig()) {
-    WiFi.mode(WIFI_STA);
-    char* ssid = this->_getParameterById(SSID_ID);
-    char* pass = this->_getParameterById(PASS_ID);
-#if DEBUG_PRINT
-    Serial.print("Setup: ");
-    Serial.print(ssid?ssid:"NULL");
-    Serial.println(pass?pass:"NULL");
-#endif
-    WiFi.begin (ssid, pass);
-
-    if(WiFi.waitForConnectResult() != WL_CONNECTED) {
-      Serial.println("WiFi Connect Failed! ...");
+  if (! this->_readConfig()) {
+    // Configure device
+    ESP8266WebServer server(80);
+    this->_setupConfig(server);
+    // Serve the config page at "/" until config done.
+    while(!HttpConfigHandler::ConfigurationDone) {
+      server.handleClient();
     }
-    return true;
+    this->_readConfig();
   }
-  this->_setupConfig(server);
-  _configMode = 1;
-  return false;
+  return this->_startWifi();
 }
 
 void ESPWebConfig::setHelpText(char* helpText) {
@@ -62,16 +37,6 @@ void ESPWebConfig::clearConfig() {
   EEPROM.commit();
 }
 
-int ESPWebConfig::isConfigMode() {
-  return _configMode;
-}
-
-int ESPWebConfig::handleClient() {
-  if (_server && _configMode) {
-    _server->handleClient();
-  }
-  return !_configMode;
-}
 
 ///////// Private functions ///////////////////
 
@@ -96,6 +61,7 @@ void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
     WiFi.softAP(ap_name);
   }
   server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters, _helpText));
+  server.begin();
 }
 
 /* Find id of variablename. 1, 2, ..., return 0 on failure. */
@@ -161,4 +127,22 @@ char* ESPWebConfig::_getParameterById(const int id) {
   // Found index, skip one top point to string
   tmp++;
   return (char*)tmp;
+}
+
+bool ESPWebConfig::_startWifi() {
+  WiFi.mode(WIFI_STA);
+  char* ssid = this->_getParameterById(SSID_ID);
+  char* pass = this->_getParameterById(PASS_ID);
+#if DEBUG_PRINT
+  Serial.print("Setup: ");
+  Serial.print(ssid?ssid:"NULL");
+  Serial.println(pass?pass:"NULL");
+#endif
+  WiFi.begin (ssid, pass);
+
+  if(WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.println("WiFi Connect Failed! ...");
+    return false;
+  }
+  return true;
 }

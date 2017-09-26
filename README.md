@@ -4,15 +4,18 @@ Arduino web based configuration library for ESP8266 chip.
 Configure the wifi of the device in a web inteface. After first boot it will act as an access point,
 so you don't need ssid and password hard coded in your program.
 
+## Basics: examples/BasicESPWebConfig
+
 ```
 ESPWebConfig espConfig;
 
 setup() {
-  if (espConfig.setup(server)) {
-    // Your normal code ...
-  } else {
-    // In config mode. No need to do anything.
-  }
+  // Read config and set up wifi.
+  // If no config, this function will block, set up an access point and serve config web UI. 
+  espConfig.setup();
+
+  // Configuration read and wifi connected
+  // Your normal code ...
 }
 ```
 
@@ -22,11 +25,16 @@ setup() {
 After config and reboot the device will connect to the wifi you configured.
 It will get a new IP number.
 
-![Connect to AP to configure](examples/BasicESPWebConfig/esp_done.png)
+In this example a wifi client is making a call: (Serial output)
+```
+Configuration done!192.168.1.90
+Test wifi connection
+Google responded with code 301
+```
 
 
+# More features: examples/BasicESPWebConfig
 
-# Custom configuration variables
 The wifi stuff above is always there, but you can add extra parameters during config,
 that you can use during normal execution.
 Add them as an array of strings to the constructor:
