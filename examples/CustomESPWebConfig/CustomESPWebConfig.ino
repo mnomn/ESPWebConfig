@@ -4,16 +4,13 @@
 /*
  Starter project for Arduino/ESP8266, ESPWebConfig demo.
 
- First boot (or after longpress): Device will be an access point named
- ESP_<ipnumber>, which you access to configure normal WIFI and other parameters.
- User opens <ipnumber> in browser. Enter Wifi name and password. Also configure
-  user defined parameters, in this example "Greeting" and "Name".
+ First boot: Device will be an access point named ESP_<ipnumber>, which you access
+ to configure normal WIFI and other parameters. User opens <ipnumber> in browser.
+ Enter Wifi name and password. Also configure user defined parameters.
 
  After config and restart:
  Lib will handle wifi login. The device will get new IP. In this example,
- the custom parameters will be printed when browsing to new ip number.
-
- You arduino sketch must define its own url handlers.
+ a server is set up and the custom parameters will be printed when browsing to new ip number.
 */
 
 /* Strings are both used to display UI and find value after config is done.
@@ -60,6 +57,7 @@ void setup() {
   }
   Serial.println(F("Starting ..."));
 
+  // Read config and connect to wifi.
   espConfig.setup();
 
   Serial.print(F("Booting: "));
