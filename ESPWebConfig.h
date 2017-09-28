@@ -12,13 +12,12 @@ When you click "Submit, the device will reboot and go to normal execution."
 
 Preparation
 -----------
-Create an ESPConfig object. Set Access Point password, reset pin and
-a list of parameters. 
+Create an ESPConfig object. Optionally, set Access Point password, a list of extra parameters.
 
 For example
 const int noOfParams 2
 String parameters[noOfParams] = {String("SSID"), String("Password")};
-ESPConfig espConfig("configpass", -1, parameters, noOfParams);
+ESPConfig espConfig("configpass", parameters, noOfParams);
 
 */
 
