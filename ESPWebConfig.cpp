@@ -8,18 +8,45 @@ ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int n
   _noOfParameters = noOfParameters;
 }
 
-bool ESPWebConfig::setup() {
-  if (! this->_readConfig()) {
-    // Configure device
-    ESP8266WebServer server(80);
-    this->_setupConfig(server);
-    // Serve the config page at "/" until config done.
-    while(!HttpConfigHandler::ConfigurationDone) {
-      server.handleClient();
+bool ESPWebConfig::setup(unsigned configTimeIfNoWifi) {
+  bool cfgRead = false;
+
+  cfgRead = this->_readConfig();
+  if (cfgRead) {
+    if (this->_startWifi()) {
+      return true;
     }
-    this->_readConfig();
+  } else {
+    // Not configured... long time config!
+    configTimeIfNoWifi = 24*60*60;
   }
-  return this->_startWifi();
+
+  if (configTimeIfNoWifi == 0) {
+    // Configured, but no wifi and no configTimeIfNoWifi setting
+    return false;
+  }
+
+  // Configure device
+  ESP8266WebServer server(80);
+  this->_setupConfig(server);
+  Serial.println("Enter config mode.");
+  // Serve the config page at "/" until config done.
+  unsigned long startCfg = millis();
+  while(!HttpConfigHandler::ConfigurationDone) {
+    server.handleClient();
+    if (!HttpConfigHandler::ConfigurationStarted &&
+        millis() > startCfg + configTimeIfNoWifi * 1000) {
+      // If config not started within _configIfNoWifi, give up.
+      // _configIfNoWifi can be quite small, for power saving reasons
+      break;
+    }
+  }
+
+  // One more try to read config and start wifi.
+  if (this->_readConfig() && this->_startWifi()) {
+    return true;
+  }
+  return false;
 }
 
 void ESPWebConfig::setHelpText(char* helpText) {
@@ -33,7 +60,7 @@ char* ESPWebConfig::getParameter(const char *name) {
 
 void ESPWebConfig::clearConfig() {
   Serial.println("Clear config.");
-  EEPROM.write(0, 0);
+  EEPROM.write(0, CONFIG_ERASED);
   EEPROM.commit();
 }
 
@@ -44,8 +71,6 @@ void ESPWebConfig::clearConfig() {
 void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
   WiFi.mode(WIFI_AP);
   char ap_name[32];
-  char* tmp;
-  tmp = ap_name + 4;
   IPAddress myIP = WiFi.softAPIP();
   String ipstr;
   if (myIP) {
@@ -60,7 +85,10 @@ void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
   } else {
     WiFi.softAP(ap_name);
   }
-  server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters, _helpText));
+
+  bool showRestore = (_eepromData[0] == CONFIG_ERASED);
+  server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters,
+                                          _helpText, showRestore));
   server.begin();
 }
 

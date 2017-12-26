@@ -35,17 +35,27 @@ public:
        */
     ESPWebConfig(const char* configPassword = NULL, String* paramNames = {}, int noOfParameters = 0);
 
-    /* Set text that will help the user understand what to write in the config. */
-    void setHelpText(char* helpText);
-
     /* Call from arduino setup function.
        Read configuration parameter and connect to wifi.
        If no configuration data, function will block, create AP and serve config web.
+       ConfigTimeIfNoWifi: Enter config mode if wifi fails to connect.
+                           Config web must be accessed within ConfigTimeIfNoWifi sec, or function returns.
+                           Used to reconfigure devices without buttons or API access.
+                           default: 0/disabled.
+
        Return true if wifi connected.
               false if wifi not connected.
-              (No return if no configuration, returns true false after config web filled in.)
+              (Function blocks during configuration, returns true false after config web filled in.)
        */
-    bool setup();
+    bool setup(unsigned int configTimeIfNoWifi = 0);
+
+
+    /***** Optional parameters *****/
+
+    /* Set text that will help the user understand what to write in the config. */
+    void setHelpText(char* helpText);
+
+    //void setConfigIfNoWifi(unsigned int configSec);
 
     /* Call this to clear the config. Will not restart device.
        Call ESP.restart() from main program to restart. */
@@ -63,8 +73,6 @@ private:
 
     byte _eepromData[512];
     char* _helpText;
-
-    unsigned long _resetTime = 0;
 
     // Private because users do not know mumerical id
     char* _getParameterById(const int id);

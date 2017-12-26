@@ -6,13 +6,14 @@
 
 // EEprom defines
 #define CONFIG_VALID 0x1a
+#define CONFIG_ERASED 0x1b
 #define STRING_END 0
 #define SSID_ID 1
 #define PASS_ID 2
 #define NO_OF_INTERNAL_PARAMS 2
 #define USER_PARAM_ID 3
 
-#define DEBUG_PRINT 0
+//#define DEBUG_PRINT 1
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
@@ -23,9 +24,10 @@ id 1 and 2 is for wifi config. id 3 and higher is for user defined parameters.
 */
 class HttpConfigHandler : public RequestHandler {
   public:
+    static boolean ConfigurationStarted;
     static boolean ConfigurationDone;
     HttpConfigHandler(const char* uri = "config", const String* ParamNames = {},
-    int NoOfParameters = 0, char* HelpText = NULL)
+    int NoOfParameters = 0, char* HelpText = NULL, bool RestoreOld = false)
     : _uri(uri)
     {
       paramNames = ParamNames;
@@ -37,6 +39,7 @@ class HttpConfigHandler : public RequestHandler {
 #endif
       noOfParams = NoOfParameters;
       helpText = HelpText;
+      restoreOld = RestoreOld;
       Serial.println(uri);
     }
 
@@ -53,6 +56,8 @@ class HttpConfigHandler : public RequestHandler {
       if (requestMethod == HTTP_GET) {
         String label;
         String inputtype;
+        HttpConfigHandler::ConfigurationStarted = true;
+
         String out =
         F("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         "<style type=text/css>"
@@ -100,8 +105,11 @@ class HttpConfigHandler : public RequestHandler {
             out += "/></p>\n";
           }
         }
-        out += F("<p><input type=\"submit\" name=\"kp\" value=\"Keep old config\" formnovalidate/></p>"
-                 "<p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>");
+        out += F("<p><input type=\"submit\" name=\"kp\" value=\"Keep old config\" formnovalidate");
+        if (!restoreOld) {
+          out += " disabled";
+        }
+        out += F("/></p><p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>");
         server.send(200, "text/html", out);
       } else if (requestMethod == HTTP_POST) {
         char argName[8];
@@ -153,7 +161,9 @@ class HttpConfigHandler : public RequestHandler {
     const String* paramNames;
     int noOfParams;
     char* helpText;
+    bool restoreOld;
 };
 boolean HttpConfigHandler::ConfigurationDone = false;
+boolean HttpConfigHandler::ConfigurationStarted = false;
 
 #endif

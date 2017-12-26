@@ -57,8 +57,10 @@ void setup() {
   }
   Serial.println(F("Starting ..."));
 
-  // Read config and connect to wifi.
-  espConfig.setup();
+  // If device cannot connect to wifi, it will goto config mode for 30 sec.
+  if (!espConfig.setup(30)) {
+    Serial.println(F("Failed to connect to Wifi."));
+  }
 
   Serial.print(F("Booting: "));
   Serial.println(WiFi.localIP());
