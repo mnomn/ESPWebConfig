@@ -58,6 +58,16 @@ char* ESPWebConfig::getParameter(const char *name) {
   return this->_getParameterById(id);
 }
 
+byte ESPWebConfig::getRaw(unsigned int address) {
+  return this->_eepromData[address];
+}
+
+void ESPWebConfig::setRaw(unsigned int address, byte val) {
+  this->_eepromData[address] = val;
+  EEPROM.write(address, val);
+  EEPROM.commit();
+}
+
 void ESPWebConfig::clearConfig() {
   Serial.println("Clear config.");
   EEPROM.write(0, CONFIG_ERASED);
@@ -134,8 +144,6 @@ bool ESPWebConfig::_readConfig()
 #endif
     eeprom_address++;
   }
-  // Hard code end marker
-  _eepromData[511] = 0;
 
   return true;
 }

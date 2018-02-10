@@ -66,11 +66,17 @@ public:
        return: parameter value as char*, or null if not found. */
     char* getParameter(const char *name);
 
+    /* Set/get a byte based on eeprom address (0 - 511).
+       Used for runtime configuration after web config.
+       Web config starts at 0, so get/setRaw shall typically use address
+       511, 510, 509 etc. */
+    byte getRaw(unsigned int address);
+    void setRaw(unsigned int address, byte val);
+
 private:
     const char* _configPassword;
     const String* _paramNames;
     int _noOfParameters;
-
     byte _eepromData[512];
     char* _helpText;
 
