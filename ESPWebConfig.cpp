@@ -11,7 +11,7 @@ ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int n
 bool ESPWebConfig::setup(unsigned configTimeIfNoWifi) {
   bool cfgRead = false;
 
-  cfgRead = this->_readConfig();
+  cfgRead = _paramStore.ReadConfig();
   if (cfgRead) {
     if (this->_startWifi()) {
       return true;
@@ -43,7 +43,7 @@ bool ESPWebConfig::setup(unsigned configTimeIfNoWifi) {
   }
 
   // One more try to read config and start wifi.
-  if (this->_readConfig() && this->_startWifi()) {
+  if (_paramStore.ReadConfig() && this->_startWifi()) {
     return true;
   }
   return false;
@@ -55,15 +55,15 @@ void ESPWebConfig::setHelpText(char* helpText) {
 
 char* ESPWebConfig::getParameter(const char *name) {
   byte id = this->_nameToId(name);
-  return this->_getParameterById(id);
+  return _paramStore.GetParameterById(id);
 }
 
 byte ESPWebConfig::getRaw(unsigned int address) {
-  return this->_eepromData[address];
+  return _paramStore._eepromData[address];
 }
 
 void ESPWebConfig::setRaw(unsigned int address, byte val) {
-  this->_eepromData[address] = val;
+  _paramStore._eepromData[address] = val;
   EEPROM.write(address, val);
   EEPROM.commit();
 }
@@ -96,9 +96,8 @@ void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
     WiFi.softAP(ap_name);
   }
 
-  bool showRestore = (_eepromData[0] == CONFIG_ERASED);
   server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters,
-                                          _helpText, showRestore));
+                                          _helpText, &_paramStore));
   server.begin();
 }
 
@@ -117,58 +116,10 @@ byte ESPWebConfig::_nameToId(const char* name) {
   return 0;
 }
 
-/* Read all config strings to memory, return true if valid config */
-bool ESPWebConfig::_readConfig()
-{
-  EEPROM.begin(512);
-  _eepromData[0] = EEPROM.read(0);
-#if DEBUG_PRINT
-  Serial.println("EEPROM:");
-  Serial.print(_eepromData[0]);
-#endif
-  if (_eepromData[0] != CONFIG_VALID) {
-    return false;
-  }
-
-  int eeprom_address = 1;
-  // Read all eeprom into memory
-  while (eeprom_address < 512) {
-    _eepromData[eeprom_address] = EEPROM.read(eeprom_address);
-#if DEBUG_PRINT
-    String dbg = " ";
-    dbg += _eepromData[eeprom_address];
-    Serial.print(dbg.c_str());
-    if (eeprom_address%32 == 0) {
-      Serial.println();
-    }
-#endif
-    eeprom_address++;
-  }
-
-  return true;
-}
-
-char* ESPWebConfig::_getParameterById(const int id) {
-  if (id <= 0) {
-    return 0;
-  }
-  byte* tmp = _eepromData;
-  byte* end = tmp + 511;
-  while(*tmp != id) {
-    tmp++;
-    if (tmp == end) {
-      return 0;
-    }
-  }
-  // Found index, skip one top point to string
-  tmp++;
-  return (char*)tmp;
-}
-
 bool ESPWebConfig::_startWifi() {
   WiFi.mode(WIFI_STA);
-  char* ssid = this->_getParameterById(SSID_ID);
-  char* pass = this->_getParameterById(PASS_ID);
+  char* ssid = _paramStore.GetParameterById(SSID_ID);
+  char* pass = _paramStore.GetParameterById(PASS_ID);
 #if DEBUG_PRINT
   Serial.print("Setup: ");
   Serial.print(ssid?ssid:"NULL");

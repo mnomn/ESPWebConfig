@@ -24,6 +24,7 @@ ESPConfig espConfig("configpass", parameters, noOfParams);
 
 #include <Arduino.h>
 #include <ESP8266WebServer.h>
+#include "detail/ParamStore.h"
 
 class ESPWebConfig
 {
@@ -77,11 +78,10 @@ private:
     const char* _configPassword;
     const String* _paramNames;
     int _noOfParameters;
-    byte _eepromData[512];
     char* _helpText;
+    ParamStore _paramStore;
 
     // Private because users do not know mumerical id
-    char* _getParameterById(const int id);
     void _setupConfig(ESP8266WebServer& server);
     byte _nameToId(const char* name);
     bool _readConfig();

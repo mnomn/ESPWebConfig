@@ -2,24 +2,20 @@
 #define HTTPCONFIGHANDLER_H
 
 #include <ESP8266WebServer.h>
-#include <EEPROM.h>
+#include "ParamStore.h"
 
 // EEprom defines
-#define CONFIG_VALID 0x1a
-#define CONFIG_ERASED 0x1b
 #define STRING_END 0
 #define SSID_ID 1
 #define PASS_ID 2
 #define NO_OF_INTERNAL_PARAMS 2
 #define USER_PARAM_ID 3
 
-//#define DEBUG_PRINT 1
-
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
 /*
-Eeprom format: CONFIG_VALID, id1, chars, 0, id2, 0, ... 
-CONFIG_VALID,1,'v','a','l','1',0,2,'v','a','l','2',0
+Eeprom format: CONFIG_VALID/ERASED, id1, chars, 0, id2, 0, ...
+Example: 0x1a,1,'v','a','l','1',0,2,'v','a','l','2',0
 id 1 and 2 is for wifi config. id 3 and higher is for user defined parameters.
 */
 class HttpConfigHandler : public RequestHandler {
@@ -27,7 +23,7 @@ class HttpConfigHandler : public RequestHandler {
     static boolean ConfigurationStarted;
     static boolean ConfigurationDone;
     HttpConfigHandler(const char* uri = "config", const String* ParamNames = {},
-    int NoOfParameters = 0, char* HelpText = NULL, bool RestoreOld = false)
+    int NoOfParameters = 0, char* HelpText = NULL, ParamStore *ParamStore = NULL)
     : _uri(uri)
     {
       paramNames = ParamNames;
@@ -39,7 +35,7 @@ class HttpConfigHandler : public RequestHandler {
 #endif
       noOfParams = NoOfParameters;
       helpText = HelpText;
-      restoreOld = RestoreOld;
+      paramStore = ParamStore;
       Serial.println(uri);
     }
 
@@ -49,82 +45,93 @@ class HttpConfigHandler : public RequestHandler {
       return true;
     }
 
-    bool handle(ESP8266WebServer& server, HTTPMethod requestMethod, String requestUri) override { 
+    char *generateInputField(const char *legend, int id, char *html, int len)
+    {
+      char *p = html;
+      int left = len-1;// zero trem
+      int l = 0;
+      char *val = NULL;
+      if (paramStore->Restore()) {
+        val = paramStore->GetParameterById(id);
+      }
+      const char *type = NULL;
+      // Check for inpit type
+      char *tmp = strchr(legend, '|');
+      if (tmp) {
+        type = legend;
+        legend = tmp+1;
+        *tmp = '\0';// Convert | to end of string
+      }
+      char *req = strchr(legend, '*');
+
+      l = sprintf(p, "<p><label>%s</label><input name=%d", legend, id);
+      p += l;
+      left -= l;
+
+      if (type && strlen(type) + 8 + 17 < left) {
+        l = sprintf(p, " type=\"%s\"", type);
+        left -= l;
+        p += l;
+      }
+      if (val && strlen(val) + 9 + 17 < left) {
+        l = sprintf(p, " value=\"%s\"", val);
+        left -= l;
+        p += l;
+      }
+      // End input tag
+      if (req) {
+        // Size of( "required"/></p>) = 17
+        sprintf(p, " \"required\"/></p>");
+      } else {
+        sprintf(p, " /></p>");
+      }
+    }
+
+    bool handle(ESP8266WebServer& server, HTTPMethod requestMethod, String requestUri) override {
+//      const char HTML_START[] PROGMEM = ;
+
+//      const char HTML_END[] PROGMEM = "<p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>";
+
       if (requestUri != _uri) {
         return false;
       }
       if (requestMethod == HTTP_GET) {
-        String label;
-        String inputtype;
-        HttpConfigHandler::ConfigurationStarted = true;
+        char inp[128];
 
-        String out =
-        F("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        HttpConfigHandler::ConfigurationStarted = true;
+        Serial.println("Handle config page");
+
+        server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+        server.send(200, "text/html", "");
+        server.sendContent("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         "<style type=text/css>"
         "body { margin:5%; font-family: Arial;} form p label {display:block;float:left;width:100px;}"
         "</style></head>"
         "<body><h1>Configure me!</h1><form action=\"/\" method=\"post\">"
-        "<h3>Wifi configuration</h3>"
-        "<p><label>SSID* </label><input name=1 type=\"text\" required/></p>"
-        "<p><label>Password* </label><input name=2 type=\"password\" required/></p>\n");
+        "<h3>Wifi configuration</h3>");
+
+        generateInputField("SSID*", SSID_ID, inp, 128);
+        server.sendContent(inp);
+        generateInputField("password|Password", PASS_ID, inp, 128);
+        server.sendContent(inp);
 
         if (noOfParams) {
-          out += F("<h3>Parameters</h3>");
-          if (helpText) {
-            out += "<p>";
-            out += helpText;
-            out += "</p>";
-          }
-          for (int i = 0; i<noOfParams; i++) {
-            int ix = paramNames[i].indexOf('|');
-            if ( ix > 0) {
-              label = paramNames[i].substring(0, ix);
-              inputtype = paramNames[i].substring(ix+1);
-              inputtype.trim();
-            } else {
-              label = paramNames[i];
-              inputtype = "";
-            }
-
-            out += "<p><label>";
-            out += label;
-            out +=  " </label><input ";
-            if (inputtype && inputtype.length() > 0) {
-              out += "type=\"";
-              out += inputtype;
-              out += "\" ";
-            }
-            // The name in is a number
-            out += "name=\"";
-            out += String(i + USER_PARAM_ID);
-
-            out += "\" ";
-            if (label.endsWith("*")) {
-              out += "required ";
-            }
-            out += "/></p>\n";
+          sprintf(inp, "<h3>Parameters</h3><p>%s</p>", helpText?helpText:"");
+          server.sendContent(inp);
+          for (int i = 0; i < noOfParams; i++) {
+            generateInputField(paramNames[i].c_str(), i + USER_PARAM_ID, inp, 128);
+            server.sendContent(inp);
           }
         }
-        out += F("<p><input type=\"submit\" name=\"kp\" value=\"Keep old config\" formnovalidate");
-        if (!restoreOld) {
-          out += " disabled";
-        }
-        out += F("/></p><p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>");
-        server.send(200, "text/html", out);
+        server.sendContent("<p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>");
+        server.sendContent("");
+        server.client().stop();
       } else if (requestMethod == HTTP_POST) {
         char argName[8];
         int address = 0;
         const char* c;
         EEPROM.write(address, CONFIG_VALID);
         address++;
-        // Hack to "revert config" to previous values
-        String keep_previous = server.arg("kp");
-        if (keep_previous.length()>0) {
-          EEPROM.commit();
-          server.send(200, "text/html", F("<html><body><h1>Configuration done (kept old). Restarting.</h1></body></html>"));
-          ESP.restart();
-        }
-
         for (int i = 1; i <= (noOfParams + NO_OF_INTERNAL_PARAMS); i++) {
           if (!itoa(i, argName, 10)) {
               break;
@@ -161,7 +168,7 @@ class HttpConfigHandler : public RequestHandler {
     const String* paramNames;
     int noOfParams;
     char* helpText;
-    bool restoreOld;
+    ParamStore *paramStore;
 };
 boolean HttpConfigHandler::ConfigurationDone = false;
 boolean HttpConfigHandler::ConfigurationStarted = false;
