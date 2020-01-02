@@ -45,10 +45,10 @@ class HttpConfigHandler : public RequestHandler {
       return true;
     }
 
-    char *generateInputField(const char *legend, int id, char *html, int len)
+    void generateInputField(const char *legend, int id, char *html, int len)
     {
       char *p = html;
-      int left = len-1;// zero trem
+      unsigned int left = len-1;// zero trem
       int l = 0;
       char *val = NULL;
       if (paramStore->Restore()) {
