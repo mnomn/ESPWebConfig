@@ -14,22 +14,24 @@ bool ESPWebConfig::setup(unsigned configTimeIfNoWifi) {
   cfgRead = _paramStore.ReadConfig();
   if (cfgRead) {
     if (this->_startWifi()) {
+      ESPWC_PRINTLN(F("Wifi started"));
       return true;
     }
   } else {
+    ESPWC_PRINTLN(F("Not Configured"));
     // Not configured... long time config!
     configTimeIfNoWifi = 24*60*60;
   }
 
   if (configTimeIfNoWifi == 0) {
-    // Configured, but no wifi and no configTimeIfNoWifi setting
+    ESPWC_PRINTLN(F("Configured, but no wifi"));
     return false;
   }
 
   // Configure device
   ESP8266WebServer server(80);
   this->_setupConfig(server);
-  Serial.println("Enter config mode.");
+  ESPWC_PRINTLN("Enter config mode.");
   // Serve the config page at "/" until config done.
   unsigned long startCfg = millis();
   while(!HttpConfigHandler::ConfigurationDone) {
@@ -54,6 +56,8 @@ void ESPWebConfig::setHelpText(char* helpText) {
 }
 
 char* ESPWebConfig::getParameter(const char *name) {
+  ESPWC_PRINT("getParameter ");
+  ESPWC_PRINTLN(name);
   byte id = this->_nameToId(name);
   return _paramStore.GetParameterById(id);
 }
@@ -69,7 +73,7 @@ void ESPWebConfig::setRaw(unsigned int address, byte val) {
 }
 
 void ESPWebConfig::clearConfig() {
-  Serial.println("Clear config.");
+  ESPWC_PRINTLN("Clear config.");
   EEPROM.write(0, CONFIG_ERASED);
   EEPROM.commit();
 }
@@ -104,15 +108,19 @@ void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
 /* Find id of variablename. 1, 2, ..., return 0 on failure. */
 byte ESPWebConfig::_nameToId(const char* name) {
   if (!name || !_paramNames) {
+    ESPWC_PRINTLN("_nameToId invalid");
     return 0;
   }
-  int i = 0;
-  while(_paramNames[i]) {
+
+  for (int i = 0; i<_noOfParameters; i++) {
+    ESPWC_PRINT("Compare parameter ");
+    ESPWC_PRINTLN(_paramNames[i]);
     if (strcmp(_paramNames[i].c_str(), name) == 0) {
       return i+USER_PARAM_ID;
     }
-    i++;
   }
+  ESPWC_PRINT("No parameter with name ");
+  ESPWC_PRINTLN(name);
   return 0;
 }
 
@@ -120,11 +128,10 @@ bool ESPWebConfig::_startWifi() {
   WiFi.mode(WIFI_STA);
   char* ssid = _paramStore.GetParameterById(SSID_ID);
   char* pass = _paramStore.GetParameterById(PASS_ID);
-#if DEBUG_PRINT
-  Serial.print("Setup: ");
-  Serial.print(ssid?ssid:"NULL");
-  Serial.println(pass?pass:"NULL");
-#endif
+  ESPWC_PRINT("Setup: ");
+  ESPWC_PRINT(ssid?ssid:"NULL");
+  ESPWC_PRINT(" ");
+  ESPWC_PRINTLN(pass?pass:"NULL");
   WiFi.begin (ssid, pass);
 
   if(WiFi.waitForConnectResult() != WL_CONNECTED) {

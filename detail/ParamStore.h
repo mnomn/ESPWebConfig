@@ -5,26 +5,30 @@
 #define CONFIG_ERASED 0x1b
 
 #include <EEPROM.h>
-
-//#define DEBUG_PRINT 1
+#include "espwc.h"
 
 class ParamStore
 {
 public:
   char* GetParameterById(const int id) {
+    ESPWC_PRINT("GetParameterById ");
+    ESPWC_PRINTLN(id);
     if (id <= 0) {
-      return 0;
+      return '\0';
     }
     byte* tmp = _eepromData;
     byte* end = tmp + 511;
     while(*tmp != id) {
       tmp++;
       if (tmp == end) {
-        return 0;
+        ESPWC_PRINTLN("Param not found");
+        return '\0';
       }
     }
-    // Found index, skip one top point to string
+    // Found index, skip one to point to string
     tmp++;
+    ESPWC_PRINT("Param found:");
+    ESPWC_PRINTLN((char*)tmp);
     return (char*)tmp;
   }
 
@@ -33,7 +37,7 @@ public:
   {
     EEPROM.begin(512);
     _eepromData[0] = EEPROM.read(0);
-  #if DEBUG_PRINT
+  #ifdef ESPWC_DEBUG
     Serial.println("EEPROM 0:");
     Serial.print(_eepromData[0]);
   #endif
@@ -44,7 +48,7 @@ public:
       // Read all eeprom into memory
       while (eeprom_address < 512) {
         _eepromData[eeprom_address] = EEPROM.read(eeprom_address);
-    #if DEBUG_PRINT
+    #ifdef ESPWC_DEBUG
         String dbg = " ";
         dbg += _eepromData[eeprom_address];
         Serial.print(dbg.c_str());
@@ -55,7 +59,7 @@ public:
         eeprom_address++;
       }
     }
-
+    ESPWC_PRINTLN("");
     return _eepromData[0] == CONFIG_VALID;
   }
 
