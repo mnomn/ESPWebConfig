@@ -80,7 +80,6 @@ class HttpConfigHandler : public RequestHandler {
       }
       // End input tag
       if (req) {
-        // Size of( "required"/></p>) = 17
         sprintf(p, " \"required\"/></p>");
       } else {
         sprintf(p, " /></p>");
@@ -88,15 +87,16 @@ class HttpConfigHandler : public RequestHandler {
     }
 
     bool handle(ESP8266WebServer& server, HTTPMethod requestMethod, String requestUri) override {
-//      const char HTML_START[] PROGMEM = ;
-
-//      const char HTML_END[] PROGMEM = "<p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>";
-
       if (requestUri != _uri) {
         return false;
       }
       if (requestMethod == HTTP_GET) {
         char inp[128];
+
+        // Get chipId
+        uint32_t chipid = ESP.getChipId();
+        char chipStr[32] ={0};
+        sprintf(chipStr, "<p>ChipId: %0X</p>", chipid);
 
         HttpConfigHandler::ConfigurationStarted = true;
         Serial.println("Handle config page");
@@ -123,7 +123,10 @@ class HttpConfigHandler : public RequestHandler {
             server.sendContent(inp);
           }
         }
-        server.sendContent("<p><input type=\"submit\" value=\"Save\"/></p></form><br></body></html>");
+        server.sendContent("<p><input type=\"submit\" value=\"Save\"/></p></form><br>");
+        // Print chipId, Could be useful in config.
+        server.sendContent(chipStr);
+        server.sendContent("</body></html>");
         server.sendContent("");
         server.client().stop();
       } else if (requestMethod == HTTP_POST) {
