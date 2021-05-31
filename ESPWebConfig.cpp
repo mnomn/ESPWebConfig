@@ -73,9 +73,11 @@ void ESPWebConfig::setRaw(unsigned int address, byte val) {
 }
 
 void ESPWebConfig::clearConfig() {
+  if (_configCleard) return;
   ESPWC_PRINTLN("Clear config.");
   EEPROM.write(0, CONFIG_ERASED);
   EEPROM.commit();
+  _configCleard = true;
 }
 
 

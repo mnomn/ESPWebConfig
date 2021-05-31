@@ -80,6 +80,7 @@ private:
     int _noOfParameters;
     char* _helpText;
     ParamStore _paramStore;
+    bool _configCleard = false;
 
     // Private because users do not know mumerical id
     void _setupConfig(ESP8266WebServer& server);
