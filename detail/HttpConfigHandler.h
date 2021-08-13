@@ -86,7 +86,7 @@ class HttpConfigHandler : public RequestHandler {
       }
     }
 
-    bool handle(ESP8266WebServer& server, HTTPMethod requestMethod, String requestUri) override {
+    bool handle(ESP8266WebServer& server, HTTPMethod requestMethod, const String& requestUri) override {
       if (requestUri != _uri) {
         return false;
       }

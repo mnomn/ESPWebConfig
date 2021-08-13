@@ -14,7 +14,7 @@ public:
     ESPWC_PRINT("GetParameterById ");
     ESPWC_PRINTLN(id);
     if (id <= 0) {
-      return '\0';
+      return NULL;
     }
     byte* tmp = _eepromData;
     byte* end = tmp + 511;
@@ -22,7 +22,7 @@ public:
       tmp++;
       if (tmp == end) {
         ESPWC_PRINTLN("Param not found");
-        return '\0';
+        return NULL;
       }
     }
     // Found index, skip one to point to string
