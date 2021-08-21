@@ -57,8 +57,7 @@ void setup() {
   }
   Serial.println(F("Starting ..."));
 
-  // If device cannot connect to wifi, it will goto config mode for 30 sec.
-  if (!espConfig.setup(30)) {
+  if (!espConfig.setup()) {
     Serial.println(F("Failed to connect to Wifi."));
   }
 

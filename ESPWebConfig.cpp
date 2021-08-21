@@ -1,48 +1,49 @@
 #include <ESPWebConfig.h>
 #include <ESP8266WiFi.h>
-#include <detail/HttpConfigHandler.h>
 
-ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int noOfParameters) {
+char* ESPWebConfig::_helpText = NULL;
+ParamStore ESPWebConfig::_paramStore;
+const String* ESPWebConfig::_paramNames = NULL;
+int ESPWebConfig::_paramNamesLength = 0;
+boolean ESPWebConfig::_configurationDone = false;
+
+// TODO: Only create server when web config starts.
+ESP8266WebServer* server;
+
+// EEprom defines
+#define STRING_END 0
+#define SSID_ID 1
+#define PASS_ID 2
+#define NO_OF_INTERNAL_PARAMS 2
+#define USER_PARAM_ID 3
+
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
+ESPWebConfig::ESPWebConfig(const char* configPassword, String* paramNames, int paramNamesLength, char* helpText) {
   _configPassword = configPassword;
   _paramNames = paramNames;
-  _noOfParameters = noOfParameters;
+  _paramNamesLength = paramNamesLength;
+  _helpText = helpText;
 }
 
-bool ESPWebConfig::setup(unsigned configTimeIfNoWifi) {
+bool ESPWebConfig::setup() {
   bool cfgRead = false;
+
+  ESPWC_PRINTLN("Setup");
 
   cfgRead = _paramStore.ReadConfig();
   if (cfgRead) {
+    ESPWC_PRINTLN("Start wifi");
     if (this->_startWifi()) {
-      ESPWC_PRINTLN(F("Wifi started"));
+      ESPWC_PRINTLN("Wifi started");
       return true;
     }
   } else {
-    ESPWC_PRINTLN(F("Not Configured"));
-    // Not configured... long time config!
-    configTimeIfNoWifi = 24*60*60;
-  }
-
-  if (configTimeIfNoWifi == 0) {
-    ESPWC_PRINTLN(F("Configured, but no wifi"));
-    return false;
+    ESPWC_PRINTLN("Not Configured");
   }
 
   // Configure device
-  ESP8266WebServer server(80);
-  this->_setupConfig(server);
-  ESPWC_PRINTLN("Enter config mode.");
-  // Serve the config page at "/" until config done.
-  unsigned long startCfg = millis();
-  while(!HttpConfigHandler::ConfigurationDone) {
-    server.handleClient();
-    if (!HttpConfigHandler::ConfigurationStarted &&
-        millis() > startCfg + configTimeIfNoWifi * 1000) {
-      // If config not started within _configIfNoWifi, give up.
-      // _configIfNoWifi can be quite small, for power saving reasons
-      break;
-    }
-  }
+  this->_startWebConfiguration();
 
   // One more try to read config and start wifi.
   if (_paramStore.ReadConfig() && this->_startWifi()) {
@@ -51,14 +52,11 @@ bool ESPWebConfig::setup(unsigned configTimeIfNoWifi) {
   return false;
 }
 
-void ESPWebConfig::setHelpText(char* helpText) {
-  _helpText = helpText;
-}
-
 char* ESPWebConfig::getParameter(const char *name) {
   ESPWC_PRINT("getParameter ");
   ESPWC_PRINTLN(name);
   byte id = this->_nameToId(name);
+
   return _paramStore.GetParameterById(id);
 }
 
@@ -72,6 +70,11 @@ void ESPWebConfig::setRaw(unsigned int address, byte val) {
   EEPROM.commit();
 }
 
+void ESPWebConfig::startConfig(unsigned long timeoutMs) {
+  ESPWC_PRINTLN("Start config.");
+  this->_startWebConfiguration(timeoutMs);
+}
+
 void ESPWebConfig::clearConfig() {
   if (_configCleard) return;
   ESPWC_PRINTLN("Clear config.");
@@ -83,30 +86,6 @@ void ESPWebConfig::clearConfig() {
 
 ///////// Private functions ///////////////////
 
-/* Set up Access point and handler for set up */
-void ESPWebConfig::_setupConfig(ESP8266WebServer& server) {
-  WiFi.mode(WIFI_AP);
-  char ap_name[32];
-  IPAddress myIP = WiFi.softAPIP();
-  String ipstr;
-  if (myIP) {
-    ipstr = myIP.toString();
-  } else{
-    ipstr = "unknown_ip";
-  }
-  sprintf(ap_name, "ESP_%s", ipstr.c_str());
-
-  if (_configPassword) {
-    WiFi.softAP(ap_name, _configPassword);
-  } else {
-    WiFi.softAP(ap_name);
-  }
-
-  server.addHandler(new HttpConfigHandler("/", _paramNames, _noOfParameters,
-                                          _helpText, &_paramStore));
-  server.begin();
-}
-
 /* Find id of variablename. 1, 2, ..., return 0 on failure. */
 byte ESPWebConfig::_nameToId(const char* name) {
   if (!name || !_paramNames) {
@@ -114,7 +93,7 @@ byte ESPWebConfig::_nameToId(const char* name) {
     return 0;
   }
 
-  for (int i = 0; i<_noOfParameters; i++) {
+  for (int i = 0; i<_paramNamesLength; i++) {
     ESPWC_PRINT("Compare parameter ");
     ESPWC_PRINTLN(_paramNames[i]);
     if (strcmp(_paramNames[i].c_str(), name) == 0) {
@@ -140,5 +119,168 @@ bool ESPWebConfig::_startWifi() {
     Serial.println("WiFi Connect Failed! ...");
     return false;
   }
+  ESPWC_PRINTLN("Setup: OK!!!!");
+  return true;
+}
+
+void ESPWebConfig::_handleSave() {
+  char argName[8];
+  int address = 0;
+  const char* c;
+  EEPROM.write(address, CONFIG_VALID);
+  address++;
+  for (int i = 1; i <= (_paramNamesLength + NO_OF_INTERNAL_PARAMS); i++) {
+    if (!itoa(i, argName, 10)) {
+        break;
+    }
+    String val = server->arg(argName);
+    c = val.c_str();
+#if DEBUG_PRINT
+    Serial.print(" ARG ");
+    Serial.print(i);
+    Serial.println(c);
+#endif
+    EEPROM.write(address, i);
+    address++;
+
+    while(*c) {
+      EEPROM.write(address, *c);
+      address++;
+      c++;
+    }
+    EEPROM.write(address, 0);
+    address++;
+  }
+  EEPROM.commit();
+  server->send(200, "text/html", F("<html><body><h1>Configuration done.</h1></body></html>"));
+  _configurationDone = true;
+}
+
+void ESPWebConfig::_handleServe() {
+    char inp[128];
+
+    // Get chipId
+    uint32_t chipid = ESP.getChipId();
+    char chipStr[32] ={0};
+    sprintf(chipStr, "<p>ChipId: %0X</p>", chipid);
+
+    Serial.println("Handle config page");
+
+    server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server->send(200, "text/html", "");
+    server->sendContent("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+    "<style type=text/css>"
+    "body { margin:5%; font-family: Arial;} form p label {display:block;float:left;width:100px;}"
+    "</style></head>"
+    "<body><h1>Configure device</h1><form action=\"/\" method=\"post\">"
+    "<h3>Wifi configuration</h3>");
+
+      ESPWebConfig::_generateInputField("SSID*", SSID_ID, inp, 128);
+      server->sendContent(inp);
+      ESPWebConfig::_generateInputField("password|Password", PASS_ID, inp, 128);
+      server->sendContent(inp);
+
+      if (_paramNamesLength) {
+        sprintf(inp, "<h3>Parameters</h3><p>%s</p>", _helpText?_helpText:"");
+        server->sendContent(inp);
+        for (int i = 0; i < _paramNamesLength; i++) {
+          ESPWebConfig::_generateInputField(_paramNames[i].c_str(), i + USER_PARAM_ID, inp, 128);
+          server->sendContent(inp);
+        }
+      }
+      server->sendContent("<p><input type=\"submit\" value=\"Save\"/></p></form><br>");
+      // Print chipId, Could be useful in config.
+      server->sendContent(chipStr);
+      server->sendContent("</body></html>");
+      server->sendContent("");
+      server->client().stop();
+}
+
+void ESPWebConfig::_generateInputField(const char *legend, int id, char *html, int len)
+{
+  char *p = html;
+  unsigned int left = len-1;// zero term
+  int l = 0;
+  char *val = NULL;
+  if (_paramStore.Restore()) {
+    val = _paramStore.GetParameterById(id);
+  }
+  const char *type = NULL;
+  // Check for inpit type
+  char *tmp = strchr(legend, '|');
+  if (tmp) {
+    type = legend;
+    legend = tmp+1;
+    *tmp = '\0';// Convert | to end of string
+  }
+  char *req = strchr(legend, '*');
+
+  l = sprintf(p, "<p><label>%s</label><input name=%d", legend, id);
+  p += l;
+  left -= l;
+
+  if (type && strlen(type) + 8 + 17 < left) {
+    l = sprintf(p, " type=\"%s\"", type);
+    left -= l;
+    p += l;
+  }
+  if (val && strlen(val) + 9 + 17 < left) {
+    l = sprintf(p, " value=\"%s\"", val);
+    left -= l;
+    p += l;
+  }
+  // End input tag
+  if (req) {
+    sprintf(p, " \"required\"/></p>");
+  } else {
+    sprintf(p, " /></p>");
+  }
+}
+
+
+bool ESPWebConfig::_startWebConfiguration(unsigned long timeoutMs) {
+  if (WiFi.isConnected()) WiFi.disconnect();
+
+  server = new ESP8266WebServer(80);
+
+//  ESP8266WebServer server(80);
+
+  WiFi.mode(WIFI_AP);
+  char ap_name[32];
+  IPAddress myIP = WiFi.softAPIP();
+  String ipstr;
+  if (myIP) {
+    ipstr = myIP.toString();
+  } else{
+    ipstr = "unknown_ip";
+  }
+  sprintf(ap_name, "ESP_%s", ipstr.c_str());
+
+  if (_configPassword) {
+    WiFi.softAP(ap_name, _configPassword);
+  } else {
+    WiFi.softAP(ap_name);
+  }
+
+  ESPWC_PRINTLN("Add handler /old ");
+
+  server->on("/", HTTP_GET, this->_handleServe);
+  server->on("/", HTTP_POST, this->_handleSave);
+
+  server->begin();
+
+  ESPWC_PRINTLN("Enter config mode.");
+  // Serve the config page at "/" until config done.
+  unsigned long startTime = millis();
+  while(!_configurationDone) {
+    // ESPWC_PRINTLN("HANDLE config mode.");
+    server->handleClient();
+    if (timeoutMs && (millis() - startTime) > timeoutMs) {
+      ESPWC_PRINTLN("Config timeout, restart");
+      delay(100);
+      ESP.restart();
+    }
+  }
+
   return true;
 }

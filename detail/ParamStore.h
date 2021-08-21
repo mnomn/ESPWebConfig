@@ -38,8 +38,7 @@ public:
     EEPROM.begin(512);
     _eepromData[0] = EEPROM.read(0);
   #ifdef ESPWC_DEBUG
-    Serial.println("EEPROM 0:");
-    Serial.print(_eepromData[0]);
+    Serial.printf("EEPROM 0: 0x%X\n", _eepromData[0]);
   #endif
     if (_eepromData[0] == CONFIG_VALID ||
         _eepromData[0] == CONFIG_ERASED) {
@@ -48,18 +47,19 @@ public:
       // Read all eeprom into memory
       while (eeprom_address < 512) {
         _eepromData[eeprom_address] = EEPROM.read(eeprom_address);
-    #ifdef ESPWC_DEBUG
+    #ifdef ESPWC_DEBUG_NOT_
         String dbg = " ";
         dbg += _eepromData[eeprom_address];
         Serial.print(dbg.c_str());
         if (eeprom_address%32 == 0) {
+          delay(10);
           Serial.println();
         }
     #endif
         eeprom_address++;
       }
     }
-    ESPWC_PRINTLN("");
+    delay(100);
     return _eepromData[0] == CONFIG_VALID;
   }
 

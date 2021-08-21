@@ -29,37 +29,31 @@ ESPConfig espConfig("configpass", parameters, noOfParams);
 class ESPWebConfig
 {
 public:
-    /* Create ESPConfig object.
-       paramNames:     List of parameters to connfigure in in the web interface.
-       noOfParameters: Number of parameters in ParamNames list, null for no
-                       custom parameters (Wifi parameters will always be shown).
+    /* Create ESPConfig object. Always configures Wifi access point and password. Can also configure extra parameters.
+       paramNames:     List of extra parameters parameters to show in to configure in in the web interface
+       paramNamesLength: Number of parameters in ParamNames list
        */
-    ESPWebConfig(const char* configPassword = NULL, String* paramNames = {}, int noOfParameters = 0);
+    ESPWebConfig(const char* configPassword = NULL, String* paramNames = {}, int paramNamesLength = 0, char* helpText = NULL);
 
     /* Call from arduino setup function.
-       Read configuration parameter and connect to wifi.
-       If no configuration data, function will block, create AP and serve config web.
-       ConfigTimeIfNoWifi: Enter config mode if wifi fails to connect.
-                           Config web must be accessed within ConfigTimeIfNoWifi sec, or function returns.
-                           Used to reconfigure devices without buttons or API access.
-                           default: 0/disabled.
+       Read configuration parameters and connect to wifi.
+       If no configuration is found, the function blocks and starts the web configuration.
 
-       Return true if wifi connected.
+       Return true if wifi is connected.
               false if wifi not connected.
-              (Function blocks during configuration, returns true false after config web filled in.)
        */
-    bool setup(unsigned int configTimeIfNoWifi = 0);
-
+    bool setup();
 
     /***** Optional parameters *****/
 
-    /* Set text that will help the user understand what to write in the config. */
-    void setHelpText(char* helpText);
+    /* Start config mode. Go directly to config mode, do not erase old configuration.
+       It is possible to restart without configuring, and device will keep its old configuration.
+       After config the device will restart.
 
-    //void setConfigIfNoWifi(unsigned int configSec);
+       timeout: How long to be in config mode. After time out device will restart and resume normal mode. */
+    void startConfig(unsigned long timeoutMs = 0);
 
-    /* Call this to clear the config. Will not restart device.
-       Call ESP.restart() from main program to restart. */
+    /* Clear the config. After restart the device will be unconfigured and go into config mode. */
     void clearConfig();
 
     /* After config, call this to read parameter values.
@@ -76,16 +70,20 @@ public:
 
 private:
     const char* _configPassword;
-    const String* _paramNames;
-    int _noOfParameters;
-    char* _helpText;
-    ParamStore _paramStore;
     bool _configCleard = false;
 
     // Private because users do not know mumerical id
-    void _setupConfig(ESP8266WebServer& server);
     byte _nameToId(const char* name);
     bool _readConfig();
     bool _startWifi();
+    bool _startWebConfiguration(unsigned long timeoutMs = 0);
+    static char* _helpText;
+    static ParamStore _paramStore;
+    static const String* _paramNames;
+    static int _paramNamesLength;
+    static boolean _configurationDone;
+    static void _handleServe();
+    static void _handleSave();
+    static void _generateInputField(const char *legend, int id, char *html, int len);
 };
 #endif // ESPWEBCONFIG_H
