@@ -8,7 +8,7 @@ int ESPWebConfig::_paramNamesLength = 0;
 boolean ESPWebConfig::_configurationDone = false;
 
 // TODO: Only create server when web config starts.
-ESP8266WebServer* server;
+ESP8266WebServer* ewc_server;
 
 // EEprom defines
 #define STRING_END 0
@@ -133,7 +133,7 @@ void ESPWebConfig::_handleSave() {
     if (!itoa(i, argName, 10)) {
         break;
     }
-    String val = server->arg(argName);
+    String val = ewc_server->arg(argName);
     c = val.c_str();
 #if DEBUG_PRINT
     Serial.print(" ARG ");
@@ -152,7 +152,7 @@ void ESPWebConfig::_handleSave() {
     address++;
   }
   EEPROM.commit();
-  server->send(200, "text/html", F("<html><body><h1>Configuration done.</h1></body></html>"));
+  ewc_server->send(200, "text/html", F("<html><body><h1>Configuration done.</h1></body></html>"));
   _configurationDone = true;
 }
 
@@ -166,9 +166,9 @@ void ESPWebConfig::_handleServe() {
 
     Serial.println("Handle config page");
 
-    server->setContentLength(CONTENT_LENGTH_UNKNOWN);
-    server->send(200, "text/html", "");
-    server->sendContent("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+    ewc_server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+    ewc_server->send(200, "text/html", "");
+    ewc_server->sendContent("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
     "<style type=text/css>"
     "body { margin:5%; font-family: Arial;} form p label {display:block;float:left;width:100px;}"
     "</style></head>"
@@ -176,24 +176,24 @@ void ESPWebConfig::_handleServe() {
     "<h3>Wifi configuration</h3>");
 
       ESPWebConfig::_generateInputField("SSID*", SSID_ID, inp, 128);
-      server->sendContent(inp);
+      ewc_server->sendContent(inp);
       ESPWebConfig::_generateInputField("password|Password", PASS_ID, inp, 128);
-      server->sendContent(inp);
+      ewc_server->sendContent(inp);
 
       if (_paramNamesLength) {
         sprintf(inp, "<h3>Parameters</h3><p>%s</p>", _helpText?_helpText:"");
-        server->sendContent(inp);
+        ewc_server->sendContent(inp);
         for (int i = 0; i < _paramNamesLength; i++) {
           ESPWebConfig::_generateInputField(_paramNames[i].c_str(), i + USER_PARAM_ID, inp, 128);
-          server->sendContent(inp);
+          ewc_server->sendContent(inp);
         }
       }
-      server->sendContent("<p><input type=\"submit\" value=\"Save\"/></p></form><br>");
+      ewc_server->sendContent("<p><input type=\"submit\" value=\"Save\"/></p></form><br>");
       // Print chipId, Could be useful in config.
-      server->sendContent(chipStr);
-      server->sendContent("</body></html>");
-      server->sendContent("");
-      server->client().stop();
+      ewc_server->sendContent(chipStr);
+      ewc_server->sendContent("</body></html>");
+      ewc_server->sendContent("");
+      ewc_server->client().stop();
 }
 
 void ESPWebConfig::_generateInputField(const char *legend, int id, char *html, int len)
@@ -241,7 +241,7 @@ void ESPWebConfig::_generateInputField(const char *legend, int id, char *html, i
 bool ESPWebConfig::_startWebConfiguration(unsigned long timeoutMs) {
   if (WiFi.isConnected()) WiFi.disconnect();
 
-  server = new ESP8266WebServer(80);
+  ewc_server = new ESP8266WebServer(80);
 
 //  ESP8266WebServer server(80);
 
@@ -264,17 +264,17 @@ bool ESPWebConfig::_startWebConfiguration(unsigned long timeoutMs) {
 
   ESPWC_PRINTLN("Add handler /old ");
 
-  server->on("/", HTTP_GET, this->_handleServe);
-  server->on("/", HTTP_POST, this->_handleSave);
+  ewc_server->on("/", HTTP_GET, this->_handleServe);
+  ewc_server->on("/", HTTP_POST, this->_handleSave);
 
-  server->begin();
+  ewc_server->begin();
 
   ESPWC_PRINTLN("Enter config mode.");
   // Serve the config page at "/" until config done.
   unsigned long startTime = millis();
   while(!_configurationDone) {
     // ESPWC_PRINTLN("HANDLE config mode.");
-    server->handleClient();
+    ewc_server->handleClient();
     if (timeoutMs && (millis() - startTime) > timeoutMs) {
       ESPWC_PRINTLN("Config timeout, restart");
       delay(100);
