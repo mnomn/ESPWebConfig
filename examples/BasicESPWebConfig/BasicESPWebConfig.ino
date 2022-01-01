@@ -49,12 +49,12 @@ void loop() {
   // Verify that wifi works
   static bool first = true;
   if (first) {
+    WiFiClient client;
     HTTPClient http;
-    int httpCode;
 
     first = false;
-    http.begin("http://google.com/robots.txt");
-    httpCode = http.GET();
+    http.begin(client, "http://google.com/robots.txt");
+    int httpCode = http.GET();
     Serial.println("Test wifi connection");
     Serial.print("Google responded with code ");
     Serial.print(httpCode);
