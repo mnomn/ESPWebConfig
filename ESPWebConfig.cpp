@@ -109,37 +109,32 @@ bool ESPWebConfig::_startWifi() {
   WiFi.mode(WIFI_STA);
   char* ssid = _paramStore.GetParameterById(SSID_ID);
   char* pass = _paramStore.GetParameterById(PASS_ID);
-  ESPWC_PRINT("Setup: ");
+  ESPWC_PRINT("_startWifi: ");
   ESPWC_PRINT(ssid?ssid:"NULL");
   ESPWC_PRINT(" ");
   ESPWC_PRINTLN(pass?pass:"NULL");
-  WiFi.begin (ssid, pass);
+  WiFi.begin(ssid, pass);
 
   if(WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("WiFi Connect Failed! ...");
     return false;
   }
-  ESPWC_PRINTLN("Setup: OK!!!!");
+
+  ESPWC_PRINTLN("_startWifi: OK!!!!");
   return true;
 }
 
 void ESPWebConfig::_handleSave() {
-  char argName[8];
   int address = 0;
   const char* c;
   EEPROM.write(address, CONFIG_VALID);
   address++;
   for (int i = 1; i <= (_paramNamesLength + NO_OF_INTERNAL_PARAMS); i++) {
-    if (!itoa(i, argName, 10)) {
-        break;
-    }
-    String val = ewc_server->arg(argName);
+
+    String val = ewc_server->arg(String(i));
+
     c = val.c_str();
-#if DEBUG_PRINT
-    Serial.print(" ARG ");
-    Serial.print(i);
-    Serial.println(c);
-#endif
+
     EEPROM.write(address, i);
     address++;
 
@@ -153,6 +148,8 @@ void ESPWebConfig::_handleSave() {
   }
   EEPROM.commit();
   ewc_server->send(200, "text/html", F("<html><body><h1>Configuration done.</h1></body></html>"));
+  ewc_server->close();
+  delay(1000);
   _configurationDone = true;
 }
 

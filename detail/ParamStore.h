@@ -47,15 +47,14 @@ public:
       // Read all eeprom into memory
       while (eeprom_address < 512) {
         _eepromData[eeprom_address] = EEPROM.read(eeprom_address);
-    #ifdef ESPWC_DEBUG_NOT_
-        String dbg = " ";
-        dbg += _eepromData[eeprom_address];
-        Serial.print(dbg.c_str());
-        if (eeprom_address%32 == 0) {
-          delay(10);
-          Serial.println();
+  #ifdef ESPWC_DEBUG
+        if (eeprom_address < 64) {
+          byte az = _eepromData[eeprom_address];
+          if (' ' <  az && az < 'z') Serial.print((char)az);
+          else if (az < 10) Serial.printf("<%d>", az);
+          delay(1);
         }
-    #endif
+  #endif
         eeprom_address++;
       }
     }
