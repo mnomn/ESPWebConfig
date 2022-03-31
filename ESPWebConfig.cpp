@@ -33,11 +33,10 @@ bool ESPWebConfig::setup() {
 
   cfgRead = _paramStore.ReadConfig();
   if (cfgRead) {
-    ESPWC_PRINTLN("Start wifi");
     if (this->_startWifi()) {
-      ESPWC_PRINTLN("Wifi started");
       return true;
     }
+    return false;
   } else {
     ESPWC_PRINTLN("Not Configured");
   }
@@ -116,7 +115,7 @@ bool ESPWebConfig::_startWifi() {
   WiFi.begin(ssid, pass);
 
   if(WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.println("WiFi Connect Failed! ...");
+    ESPWC_PRINTLN("WiFi Connect Failed! ...");
     return false;
   }
 
