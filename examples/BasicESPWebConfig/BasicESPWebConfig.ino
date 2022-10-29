@@ -5,12 +5,12 @@
 /*
  Configure Wifi after boot. No need to "hard code" SSID and password in code.
 
- First boot (or after reset):
- Device will be an access point named ESP_<ipnumber>, which you access to
- configure normal WIFI and other parameters.
- User opens <ipnumber> in browser and enter Wifi name and password.
+ First boot:
+ The device will set up an access point called ESP_192.161.4.1 (or something simliar).
+ Connect a phonw or laptop to that wifi network.
+ Browae to 192.161.4.1 and fill in the wifi and password you want to use in the future.
 
- After config and restart the device will get new IP. Now you can write networking code in sketch (WiFiClient, mqtt, etc)
+ Next time the device will connect to your configured network. 
 */
 
 /* Connfigure a pin that will reset config if grounded (button pressed) */
@@ -30,7 +30,6 @@ void setup() {
      create an access point and serve the confg web UI. */
   espConfig.setup();
 
-  // Print ip so we do not need to find it in the router.
   Serial.print("Configuration done!");
   Serial.println(WiFi.localIP());
 
@@ -39,10 +38,11 @@ void setup() {
 }
 
 void loop() {
+  delay(100);
   // Restart by pressing a button
   if (digitalRead(resetPin) == LOW) {
-    Serial.print("Clear configuration");
-    espConfig.clearConfig();
+    Serial.print("Start configuration");
+    espConfig.startConfig();
     ESP.restart();
   }
 
