@@ -1,6 +1,7 @@
+//#include "Arduino.h"
 #include "ParamStore.h"
+#include "ewc_d.h"
 #include <EEPROM.h>
-#include "detail/ewc_d.h"
 
 constexpr uint8_t configValid = 0x1a;
 constexpr uint8_t configCleared = 0x1b;

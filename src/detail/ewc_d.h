@@ -12,7 +12,8 @@ build_flags =
 #define ESPWC_PRINTF(fmt, ...) Serial.printf(fmt, ##__VA_ARGS__)
 #define ESPWC_PRINT(x) (Serial.print(x))
 #else
-#define ESPWC_PRINF(x)
+#define ESPWC_PRINTF(fmt, ...) Serial.printf(fmt, ##__VA_ARGS__)
+//#define ESPWC_PRINTF(fmt, ...)
 #define ESPWC_PRINT(x)
 #endif
 
